@@ -1,0 +1,98 @@
+<h2>설계 — 섹션 1 (v2): Electron 기술 스택 & 전체 구조</h2>
+<p class="subtitle">Tauri → Electron 변경. Chromium 번들로 렌더링 완전 일관.</p>
+
+<div class="section">
+  <span class="label">기술 스택 확정</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
+    <div style="background:#181825;padding:1rem;border-radius:6px">
+      <div style="color:#cba6f7;font-size:0.75rem;margin-bottom:0.5rem;letter-spacing:0.05em">⚡ ELECTRON Main Process (Node.js)</div>
+      <ul style="margin:0;padding-left:1rem;color:#cdd6f4;font-size:0.82rem;line-height:1.9">
+        <li><strong>electron</strong> — 앱 프레임워크</li>
+        <li><strong>better-sqlite3</strong> — SQLite 상태 저장</li>
+        <li><strong>chokidar</strong> — 파일 감시 (핫 리로드)</li>
+        <li><strong>fs / path</strong> — 파일 시스템 (Node 내장)</li>
+        <li><strong>electron-updater</strong> — 자동 업데이트</li>
+        <li><strong>electron-builder</strong> — 크로스플랫폼 빌드</li>
+      </ul>
+    </div>
+    <div style="background:#181825;padding:1rem;border-radius:6px">
+      <div style="color:#a6e3a1;font-size:0.75rem;margin-bottom:0.5rem;letter-spacing:0.05em">⚛️ ELECTRON Renderer (React)</div>
+      <ul style="margin:0;padding-left:1rem;color:#cdd6f4;font-size:0.82rem;line-height:1.9">
+        <li><strong>React 19 + TypeScript</strong></li>
+        <li><strong>Zustand</strong> — UI 상태 관리</li>
+        <li><strong>remark + rehype</strong> — Markdown 렌더링</li>
+        <li><strong>Shiki</strong> — 코드 하이라이트</li>
+        <li><strong>Mermaid.js</strong> — 다이어그램</li>
+        <li><strong>Vite (electron-vite)</strong> — 번들러</li>
+        <li><strong>Tailwind CSS</strong> — 스타일링</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Main ↔ Renderer IPC 구조 (보안 설계)</span>
+  <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.78rem;line-height:1.9">
+    <div style="display:grid;grid-template-columns:1fr 60px 1fr 60px 1fr;gap:0.5rem;align-items:center;text-align:center">
+      <div style="background:#1e1e2e;padding:0.6rem;border-radius:4px">
+        <div style="color:#cba6f7;margin-bottom:0.3rem">Main Process</div>
+        <div style="color:#6c7086;font-size:0.68rem">ipcMain.handle()</div>
+        <div style="color:#6c7086;font-size:0.68rem">SQLite</div>
+        <div style="color:#6c7086;font-size:0.68rem">chokidar</div>
+        <div style="color:#6c7086;font-size:0.68rem">fs / path</div>
+      </div>
+      <div style="color:#89b4fa;font-size:0.7rem">IPC<br/>⟷</div>
+      <div style="background:#1e1e2e;padding:0.6rem;border-radius:4px">
+        <div style="color:#f9e2af;margin-bottom:0.3rem">Preload Script</div>
+        <div style="color:#6c7086;font-size:0.68rem">contextBridge</div>
+        <div style="color:#6c7086;font-size:0.68rem">window.api.*</div>
+        <div style="color:#6c7086;font-size:0.68rem">(보안 격리)</div>
+      </div>
+      <div style="color:#89b4fa;font-size:0.7rem">API<br/>→</div>
+      <div style="background:#1e1e2e;padding:0.6rem;border-radius:4px">
+        <div style="color:#a6e3a1;margin-bottom:0.3rem">Renderer</div>
+        <div style="color:#6c7086;font-size:0.68rem">projectStore</div>
+        <div style="color:#6c7086;font-size:0.68rem">fileTreeStore</div>
+        <div style="color:#6c7086;font-size:0.68rem">viewerStore</div>
+        <div style="color:#6c7086;font-size:0.68rem">uiStore</div>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem;color:#6c7086;font-size:0.7rem;text-align:center">
+      nodeIntegration: false / contextIsolation: true — 보안 기본값 유지
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">SQLite 스키마 (상태 저장)</span>
+  <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.75rem;color:#cdd6f4;line-height:1.8">
+    <span style="color:#cba6f7">projects</span>: id, name, path, type, icon, last_opened, created_at<br/>
+    <span style="color:#cba6f7">project_state</span>: project_id, last_file, scroll_pos, expanded_dirs, filters, search_history<br/>
+    <span style="color:#cba6f7">app_settings</span>: theme, window_size, window_pos, active_project_id
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">크로스플랫폼 빌드 전략</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem">
+    <div style="background:#181825;padding:0.75rem;border-radius:4px;text-align:center">
+      <div style="font-size:1.2rem">🍎</div>
+      <div style="color:#cdd6f4;font-size:0.78rem;margin-top:0.3rem">macOS</div>
+      <div style="color:#6c7086;font-size:0.7rem">.dmg / .app</div>
+    </div>
+    <div style="background:#181825;padding:0.75rem;border-radius:4px;text-align:center">
+      <div style="font-size:1.2rem">🪟</div>
+      <div style="color:#cdd6f4;font-size:0.78rem;margin-top:0.3rem">Windows</div>
+      <div style="color:#6c7086;font-size:0.7rem">.exe (NSIS)</div>
+    </div>
+    <div style="background:#181825;padding:0.75rem;border-radius:4px;text-align:center">
+      <div style="font-size:1.2rem">🐧</div>
+      <div style="color:#cdd6f4;font-size:0.78rem;margin-top:0.3rem">Linux</div>
+      <div style="color:#6c7086;font-size:0.7rem">.AppImage / .deb</div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:1.5rem;padding:0.75rem 1rem;background:#1a1a1a;border-radius:6px;border-left:3px solid #a6e3a1">
+  <p style="margin:0;color:#cdd6f4;font-size:0.85rem">섹션 1 확인 후 → 섹션 2: UI 컴포넌트 트리 & 디렉터리 구조</p>
+</div>

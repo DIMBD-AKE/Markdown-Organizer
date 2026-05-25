@@ -1,0 +1,93 @@
+<h2>아키텍처 접근법 3가지</h2>
+<p class="subtitle">Tauri의 Rust 백엔드와 React 프론트엔드 경계를 어떻게 나눌 것인가</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>React-Heavy (Thin Tauri)</h3>
+      <p style="color:#aaa;font-size:0.85rem;margin-bottom:0.5rem">Markdown 파싱, TOC, 프로젝트 분석 전부 JS</p>
+      <div class="pros-cons" style="font-size:0.8rem">
+        <div class="pros"><h4>장점</h4><ul>
+          <li>개발 속도 빠름</li>
+          <li>JS 생태계 풀 활용</li>
+          <li>Tauri 지식 최소화</li>
+        </ul></div>
+        <div class="cons"><h4>단점</h4><ul>
+          <li>대용량 파일 처리 느림</li>
+          <li>메모리 사용량 높음</li>
+          <li>10k+ 문서에서 병목</li>
+        </ul></div>
+      </div>
+      <p style="color:#6c7086;font-size:0.75rem;margin-top:0.5rem">Rust 담당: FS 접근, OS 다이얼로그만</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Rust-Heavy (Thick Backend) ⚠</h3>
+      <p style="color:#aaa;font-size:0.85rem;margin-bottom:0.5rem">파싱/분석/DB 전부 Rust, React는 렌더만</p>
+      <div class="pros-cons" style="font-size:0.8rem">
+        <div class="pros"><h4>장점</h4><ul>
+          <li>최고 성능</li>
+          <li>메모리 효율</li>
+          <li>대규모 프로젝트 대응</li>
+        </ul></div>
+        <div class="cons"><h4>단점</h4><ul>
+          <li>개발 속도 느림</li>
+          <li>Rust 구현 복잡</li>
+          <li>Mermaid/Shiki는 JS만 지원</li>
+        </ul></div>
+      </div>
+      <p style="color:#6c7086;font-size:0.75rem;margin-top:0.5rem">JS가 해야만 하는 것들(Mermaid, Shiki)로 인해 브리지 복잡도 증가</p>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Hybrid — 권장 ✨</h3>
+      <p style="color:#aaa;font-size:0.85rem;margin-bottom:0.5rem">명확한 Rust/JS 경계, 각자 잘하는 것만</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;font-size:0.78rem;margin-bottom:0.5rem">
+        <div style="background:#1a1a2e;padding:0.5rem;border-radius:4px">
+          <div style="color:#cba6f7;font-size:0.7rem;margin-bottom:0.3rem">🦀 RUST</div>
+          <ul style="margin:0;padding-left:1rem;color:#aaa;line-height:1.7">
+            <li>파일 시스템 / 감시</li>
+            <li>SQLite (상태 저장)</li>
+            <li>프로젝트 유형 분석</li>
+            <li>문서 인덱싱</li>
+            <li>파일 메타데이터</li>
+          </ul>
+        </div>
+        <div style="background:#1a2a1a;padding:0.5rem;border-radius:4px">
+          <div style="color:#a6e3a1;font-size:0.7rem;margin-bottom:0.3rem">⚛️ REACT/JS</div>
+          <ul style="margin:0;padding-left:1rem;color:#aaa;line-height:1.7">
+            <li>Markdown 렌더링 (remark)</li>
+            <li>Mermaid.js 다이어그램</li>
+            <li>Shiki 코드 하이라이트</li>
+            <li>TOC 파싱/탐색</li>
+            <li>UI 상태 (Zustand)</li>
+          </ul>
+        </div>
+      </div>
+      <div class="pros-cons" style="font-size:0.8rem">
+        <div class="pros"><h4>장점</h4><ul>
+          <li>실용적 성능/생산성 균형</li>
+          <li>JS 전용 라이브러리 그대로 사용</li>
+          <li>FS 작업은 Rust가 안전하게</li>
+        </ul></div>
+        <div class="cons"><h4>단점</h4><ul>
+          <li>Rust/JS 경계 설계 필요</li>
+          <li>Tauri Command API 학습</li>
+        </ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top:1.5rem;padding:1rem;background:#1a1a1a;border-radius:6px;border-left:3px solid #cba6f7">
+  <p style="margin:0;color:#cdd6f4;font-size:0.85rem"><strong>권장:</strong> C — Hybrid. Mermaid와 Shiki는 JS 생태계에 강결합되어 있어 Rust에서 처리 불가. 동시에 파일 시스템 작업과 대규모 인덱싱은 Rust가 훨씬 안정적. 경계가 명확하면 개발도 빠름.</p>
+</div>

@@ -1,0 +1,77 @@
+<h2>설계 — 섹션 1: 기술 스택 & 전체 구조</h2>
+<p class="subtitle">확정된 선택 기반으로 전체 아키텍처 확인</p>
+
+<div class="section">
+  <span class="label">기술 스택 확정</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
+    <div style="background:#181825;padding:1rem;border-radius:6px">
+      <div style="color:#cba6f7;font-size:0.75rem;margin-bottom:0.5rem;letter-spacing:0.05em">🦀 RUST (Tauri Backend)</div>
+      <ul style="margin:0;padding-left:1rem;color:#cdd6f4;font-size:0.82rem;line-height:1.9">
+        <li><strong>tauri</strong> — 앱 프레임워크</li>
+        <li><strong>tauri-plugin-sql</strong> — SQLite 상태 저장</li>
+        <li><strong>tauri-plugin-fs</strong> — 파일 시스템</li>
+        <li><strong>tauri-plugin-dialog</strong> — 폴더 선택</li>
+        <li><strong>notify</strong> — 파일 감시 (핫 리로드)</li>
+        <li><strong>serde / serde_json</strong> — 직렬화</li>
+        <li><strong>walkdir</strong> — 디렉터리 탐색</li>
+      </ul>
+    </div>
+    <div style="background:#181825;padding:1rem;border-radius:6px">
+      <div style="color:#a6e3a1;font-size:0.75rem;margin-bottom:0.5rem;letter-spacing:0.05em">⚛️ REACT (Frontend)</div>
+      <ul style="margin:0;padding-left:1rem;color:#cdd6f4;font-size:0.82rem;line-height:1.9">
+        <li><strong>React 19 + TypeScript</strong></li>
+        <li><strong>Zustand</strong> — UI 상태 관리</li>
+        <li><strong>remark + rehype</strong> — Markdown 렌더링</li>
+        <li><strong>Shiki</strong> — 코드 하이라이트</li>
+        <li><strong>Mermaid.js</strong> — 다이어그램</li>
+        <li><strong>Vite</strong> — 번들러</li>
+        <li><strong>Tailwind CSS</strong> — 스타일링</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">Rust ↔ React 데이터 흐름</span>
+  <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.78rem;line-height:2">
+    <div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:0.5rem;align-items:center;text-align:center">
+      <div style="background:#1e1e2e;padding:0.5rem;border-radius:4px">
+        <div style="color:#cba6f7">Rust Commands</div>
+        <div style="color:#6c7086;font-size:0.7rem">get_projects()</div>
+        <div style="color:#6c7086;font-size:0.7rem">get_file_tree()</div>
+        <div style="color:#6c7086;font-size:0.7rem">read_file()</div>
+        <div style="color:#6c7086;font-size:0.7rem">save_state()</div>
+        <div style="color:#6c7086;font-size:0.7rem">analyze_project()</div>
+      </div>
+      <div style="color:#89b4fa">
+        <div>invoke</div>
+        <div style="font-size:1.2rem">⟷</div>
+        <div>events</div>
+      </div>
+      <div style="background:#1e1e2e;padding:0.5rem;border-radius:4px">
+        <div style="color:#a6e3a1">React Stores</div>
+        <div style="color:#6c7086;font-size:0.7rem">projectStore</div>
+        <div style="color:#6c7086;font-size:0.7rem">fileTreeStore</div>
+        <div style="color:#6c7086;font-size:0.7rem">viewerStore</div>
+        <div style="color:#6c7086;font-size:0.7rem">uiStore</div>
+        <div style="color:#6c7086;font-size:0.7rem">themeStore</div>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem;color:#6c7086;font-size:0.72rem;text-align:center">
+      파일 변경 감지 → Rust emit event → React 자동 갱신
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">SQLite 스키마 (상태 저장)</span>
+  <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.75rem;color:#cdd6f4;line-height:1.8">
+    <span style="color:#cba6f7">projects</span>: id, name, path, type, icon, last_opened, created_at<br/>
+    <span style="color:#cba6f7">project_state</span>: project_id, last_file, scroll_pos, expanded_dirs, filters, search_history<br/>
+    <span style="color:#cba6f7">app_settings</span>: theme, window_size, window_pos, active_project_id
+  </div>
+</div>
+
+<div style="margin-top:1.5rem;padding:0.75rem 1rem;background:#1a1a1a;border-radius:6px;border-left:3px solid #a6e3a1">
+  <p style="margin:0;color:#cdd6f4;font-size:0.85rem">이 섹션 괜찮으면 다음 섹션 (UI 컴포넌트 구조) 진행합니다.</p>
+</div>

@@ -1,0 +1,58 @@
+<h2>MVP 범위를 어디까지 잡으시겠어요?</h2>
+<p class="subtitle">README의 기능 목록이 방대합니다. 첫 버전의 범위를 선택해주세요.</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Core Viewer (최소)</h3>
+      <p>빠르게 동작하는 뼈대 먼저</p>
+      <ul style="margin-top:0.5rem;padding-left:1.2rem;color:#aaa;font-size:0.9rem">
+        <li>✅ 프로젝트 등록/전환</li>
+        <li>✅ 파일 트리 탐색</li>
+        <li>✅ Markdown 렌더링 (기본)</li>
+        <li>✅ 상태 저장 (JSON)</li>
+        <li>❌ TOC 내비게이터</li>
+        <li>❌ Mermaid</li>
+        <li>❌ 프로젝트 유형 분석</li>
+        <li>❌ 문서 상태 분석</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Full MVP (권장)</h3>
+      <p>README 핵심 기능 전부</p>
+      <ul style="margin-top:0.5rem;padding-left:1.2rem;color:#aaa;font-size:0.9rem">
+        <li>✅ 프로젝트 등록/전환</li>
+        <li>✅ 파일 트리 탐색 + 필터</li>
+        <li>✅ Markdown 렌더링 (고급)</li>
+        <li>✅ TOC 내비게이터</li>
+        <li>✅ Mermaid 지원</li>
+        <li>✅ 코드 하이라이트 (Shiki)</li>
+        <li>✅ 상태 저장 (SQLite)</li>
+        <li>✅ 문서 상태 분석 (날짜)</li>
+        <li>✅ 프로젝트 유형 자동 분석</li>
+        <li>✅ Dark / Black 테마</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Full MVP + 확장</h3>
+      <p>향후 기능까지 포함</p>
+      <ul style="margin-top:0.5rem;padding-left:1.2rem;color:#aaa;font-size:0.9rem">
+        <li>✅ B의 모든 기능</li>
+        <li>✅ 전체 텍스트 검색</li>
+        <li>✅ 탭 시스템</li>
+        <li>✅ Git 연동</li>
+        <li>✅ AI 연동 (문서 요약)</li>
+        <li>✅ 문서 그래프 (Obsidian 스타일)</li>
+      </ul>
+    </div>
+  </div>
+</div>

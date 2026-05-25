@@ -1,0 +1,133 @@
+<h2>UI 레이아웃 어떤 형태가 좋으세요?</h2>
+<p class="subtitle">3-패널 구조는 동일하지만 세부 배치가 다릅니다</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:1rem;background:#111;border-radius:4px;font-family:monospace;font-size:0.72rem;line-height:1.6">
+      <div style="display:grid;grid-template-rows:28px 1fr 20px;height:180px;gap:2px">
+        <div style="background:#1e1e2e;border-radius:3px;display:flex;align-items:center;padding:0 8px;color:#cdd6f4;font-size:0.7rem">◉ Markdown Organizer &nbsp; ⚙</div>
+        <div style="display:grid;grid-template-columns:160px 1fr 160px;gap:2px">
+          <div style="background:#181825;border-radius:3px;padding:6px;overflow:hidden">
+            <div style="color:#cba6f7;font-size:0.65rem;margin-bottom:4px">PROJECTS</div>
+            <div style="color:#a6e3a1;font-size:0.65rem">▶ Game Design</div>
+            <div style="color:#6c7086;font-size:0.65rem">  Backend API</div>
+            <div style="color:#6c7086;font-size:0.65rem">  ECS Research</div>
+            <hr style="border-color:#313244;margin:4px 0"/>
+            <div style="color:#cdd6f4;font-size:0.65rem;margin-bottom:2px">FILES</div>
+            <div style="color:#89b4fa;font-size:0.65rem">📁 Docs (12)</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;├ Design.md</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;└ ECS.md</div>
+          </div>
+          <div style="background:#1e1e2e;border-radius:3px;padding:8px;overflow:hidden">
+            <div style="color:#cdd6f4;font-size:0.7rem;font-weight:bold;margin-bottom:4px">ECS Architecture</div>
+            <div style="color:#6c7086;font-size:0.62rem;line-height:1.5">
+              Entity Component System은 게임<br/>오브젝트를 데이터와 로직으로...<br/>
+              <span style="color:#89dceb">## Component</span><br/>
+              컴포넌트는 순수 데이터만 포함...
+            </div>
+          </div>
+          <div style="background:#181825;border-radius:3px;padding:6px;overflow:hidden">
+            <div style="color:#cba6f7;font-size:0.65rem;margin-bottom:4px">TABLE OF CONTENTS</div>
+            <div style="color:#a6e3a1;font-size:0.65rem">▶ 1. Introduction</div>
+            <div style="color:#cdd6f4;font-size:0.65rem">2. ECS Architecture</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;2.1 Component</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;2.2 System</div>
+            <div style="color:#cdd6f4;font-size:0.65rem">3. Rendering</div>
+          </div>
+        </div>
+        <div style="background:#11111b;border-radius:3px;display:flex;align-items:center;padding:0 8px;color:#6c7086;font-size:0.6rem">Game Design • ECS.md • 87 days ago ⚠</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Classic 3-Panel</h3>
+      <p>프로젝트 목록 + 파일 트리가 좌측 패널에 통합. VSCode/Obsidian 스타일.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:1rem;background:#111;border-radius:4px;font-family:monospace;font-size:0.72rem;line-height:1.6">
+      <div style="display:grid;grid-template-rows:28px 1fr 20px;height:180px;gap:2px">
+        <div style="background:#1e1e2e;border-radius:3px;display:flex;align-items:center;padding:0 8px;color:#cdd6f4;font-size:0.7rem">◉ Markdown Organizer &nbsp;&nbsp; Game Design ▾ &nbsp; ⚙</div>
+        <div style="display:grid;grid-template-columns:48px 160px 1fr 160px;gap:2px">
+          <div style="background:#181825;border-radius:3px;display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:6px">
+            <div style="color:#a6e3a1;font-size:0.9rem" title="Game Design">🎮</div>
+            <div style="color:#6c7086;font-size:0.9rem">📝</div>
+            <div style="color:#6c7086;font-size:0.9rem">🔬</div>
+            <div style="color:#6c7086;font-size:0.9rem">📚</div>
+          </div>
+          <div style="background:#181825;border-radius:3px;padding:6px;overflow:hidden">
+            <div style="color:#cdd6f4;font-size:0.65rem;margin-bottom:4px">FILES</div>
+            <div style="color:#89b4fa;font-size:0.65rem">📁 Docs (12)</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;├ Design.md</div>
+            <div style="color:#a6e3a1;font-size:0.65rem">&nbsp;└ ECS.md ◀</div>
+            <div style="color:#89b4fa;font-size:0.65rem">📁 API (5)</div>
+            <div style="color:#89b4fa;font-size:0.65rem">📁 Notes (22)</div>
+          </div>
+          <div style="background:#1e1e2e;border-radius:3px;padding:8px;overflow:hidden">
+            <div style="color:#cdd6f4;font-size:0.7rem;font-weight:bold;margin-bottom:4px">ECS Architecture</div>
+            <div style="color:#6c7086;font-size:0.62rem;line-height:1.5">
+              Entity Component System...<br/>
+              <span style="color:#89dceb">## Component</span><br/>
+              컴포넌트는 순수 데이터만...
+            </div>
+          </div>
+          <div style="background:#181825;border-radius:3px;padding:6px;overflow:hidden">
+            <div style="color:#cba6f7;font-size:0.65rem;margin-bottom:4px">TOC</div>
+            <div style="color:#a6e3a1;font-size:0.65rem">▶ 1. Intro</div>
+            <div style="color:#cdd6f4;font-size:0.65rem">2. ECS</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;2.1 Component</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;2.2 System</div>
+          </div>
+        </div>
+        <div style="background:#11111b;border-radius:3px;display:flex;align-items:center;padding:0 8px;color:#6c7086;font-size:0.6rem">Game Design • ECS.md • 87 days ago ⚠</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Activity Bar + 3-Panel</h3>
+      <p>좌측에 아이콘 사이드바 추가. 프로젝트 전환이 빠름. JetBrains/Zed 스타일.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:1rem;background:#111;border-radius:4px;font-family:monospace;font-size:0.72rem;line-height:1.6">
+      <div style="display:grid;grid-template-rows:28px 1fr 20px;height:180px;gap:2px">
+        <div style="background:#1e1e2e;border-radius:3px;display:flex;align-items:center;padding:0 8px;gap:8px;color:#cdd6f4;font-size:0.7rem">
+          ◉ Markdown Organizer &nbsp;
+          <span style="background:#313244;padding:2px 8px;border-radius:12px;font-size:0.65rem">Game Design ✕</span>
+          <span style="background:#313244;padding:2px 8px;border-radius:12px;font-size:0.65rem;color:#a6e3a1">ECS.md ✕</span>
+          <span style="color:#6c7086">+</span>
+        </div>
+        <div style="display:grid;grid-template-columns:180px 1fr 160px;gap:2px">
+          <div style="background:#181825;border-radius:3px;padding:6px;overflow:hidden">
+            <div style="color:#cdd6f4;font-size:0.65rem;margin-bottom:4px">FILES</div>
+            <div style="color:#89b4fa;font-size:0.65rem">📁 Docs (12)</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;├ Design.md</div>
+            <div style="color:#a6e3a1;font-size:0.65rem">&nbsp;└ ECS.md ◀</div>
+            <div style="color:#89b4fa;font-size:0.65rem">📁 API (5)</div>
+          </div>
+          <div style="background:#1e1e2e;border-radius:3px;padding:8px;overflow:hidden">
+            <div style="color:#cdd6f4;font-size:0.7rem;font-weight:bold;margin-bottom:4px">ECS Architecture</div>
+            <div style="color:#6c7086;font-size:0.62rem;line-height:1.5">
+              Entity Component System...<br/>
+              <span style="color:#89dceb">## Component</span><br/>
+              컴포넌트는 순수 데이터만...
+            </div>
+          </div>
+          <div style="background:#181825;border-radius:3px;padding:6px;overflow:hidden">
+            <div style="color:#cba6f7;font-size:0.65rem;margin-bottom:4px">TOC</div>
+            <div style="color:#a6e3a1;font-size:0.65rem">▶ 1. Intro</div>
+            <div style="color:#cdd6f4;font-size:0.65rem">2. ECS</div>
+            <div style="color:#6c7086;font-size:0.65rem">&nbsp;2.1 Component</div>
+          </div>
+        </div>
+        <div style="background:#11111b;border-radius:3px;display:flex;align-items:center;padding:0 8px;color:#6c7086;font-size:0.6rem">ECS.md • 87 days ago ⚠</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Tab Bar + 3-Panel</h3>
+      <p>상단에 탭 시스템 포함. 멀티 문서 동시 열람. 브라우저/에디터 스타일.</p>
+    </div>
+  </div>
+
+</div>

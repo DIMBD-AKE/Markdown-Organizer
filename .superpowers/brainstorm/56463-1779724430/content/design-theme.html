@@ -1,0 +1,132 @@
+<h2>디자인 언어 / 색감을 골라주세요</h2>
+<p class="subtitle">Dark + Black 두 테마 모두 지원하지만, 기반 팔레트가 전체 분위기를 결정합니다</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0;overflow:hidden;border-radius:4px;height:160px;background:#1e1e2e">
+      <!-- Catppuccin Mocha -->
+      <div style="height:24px;background:#181825;display:flex;align-items:center;padding:0 10px;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#f38ba8;display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:#f9e2af;display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:#a6e3a1;display:inline-block"></span>
+        <span style="color:#6c7086;font-size:0.65rem;margin-left:auto">Markdown Organizer</span>
+      </div>
+      <div style="display:grid;grid-template-columns:36px 140px 1fr;height:calc(100% - 44px);gap:1px;margin-top:1px">
+        <div style="background:#181825;display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:8px">
+          <div style="width:22px;height:22px;border-radius:4px;background:#cba6f7;opacity:0.9"></div>
+          <div style="width:22px;height:22px;border-radius:4px;background:#6c7086;opacity:0.5"></div>
+          <div style="width:22px;height:22px;border-radius:4px;background:#6c7086;opacity:0.5"></div>
+        </div>
+        <div style="background:#181825;padding:8px 6px">
+          <div style="color:#cba6f7;font-size:0.6rem;margin-bottom:4px;letter-spacing:0.05em">GAME DESIGN</div>
+          <div style="color:#89b4fa;font-size:0.62rem">📁 Docs <span style="color:#6c7086">(12)</span></div>
+          <div style="color:#6c7086;font-size:0.6rem;padding-left:8px">├ Design.md</div>
+          <div style="color:#cdd6f4;font-size:0.6rem;padding-left:8px;background:#313244;border-radius:2px">└ ECS.md</div>
+          <div style="color:#89b4fa;font-size:0.62rem;margin-top:4px">📁 API <span style="color:#6c7086">(5)</span></div>
+        </div>
+        <div style="background:#1e1e2e;padding:8px">
+          <div style="color:#cdd6f4;font-size:0.68rem;font-weight:600;margin-bottom:6px">ECS Architecture</div>
+          <div style="height:3px;width:60%;background:#cba6f7;border-radius:2px;margin-bottom:6px;opacity:0.6"></div>
+          <div style="height:2px;width:90%;background:#313244;border-radius:2px;margin-bottom:3px"></div>
+          <div style="height:2px;width:75%;background:#313244;border-radius:2px;margin-bottom:3px"></div>
+          <div style="height:2px;width:85%;background:#89b4fa;border-radius:2px;margin-bottom:3px;opacity:0.5"></div>
+          <div style="height:2px;width:70%;background:#313244;border-radius:2px"></div>
+        </div>
+      </div>
+      <div style="height:18px;background:#11111b;display:flex;align-items:center;padding:0 8px">
+        <span style="color:#f9e2af;font-size:0.58rem">⚠ 87 days ago</span>
+        <span style="color:#6c7086;font-size:0.58rem;margin-left:auto">ECS.md</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Catppuccin Mocha</h3>
+      <p>보라/파랑 계열 소프트 다크. 가장 인기있는 현대적 팔레트. 눈에 편안함.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0;overflow:hidden;border-radius:4px;height:160px;background:#1f2428">
+      <!-- GitHub Dark -->
+      <div style="height:24px;background:#161b22;display:flex;align-items:center;padding:0 10px;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#ff5f57;display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:#ffbd2e;display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:#28c840;display:inline-block"></span>
+        <span style="color:#484f58;font-size:0.65rem;margin-left:auto">Markdown Organizer</span>
+      </div>
+      <div style="display:grid;grid-template-columns:36px 140px 1fr;height:calc(100% - 44px);gap:1px;margin-top:1px">
+        <div style="background:#161b22;display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:8px">
+          <div style="width:22px;height:22px;border-radius:4px;background:#58a6ff;opacity:0.9"></div>
+          <div style="width:22px;height:22px;border-radius:4px;background:#484f58;opacity:0.5"></div>
+          <div style="width:22px;height:22px;border-radius:4px;background:#484f58;opacity:0.5"></div>
+        </div>
+        <div style="background:#161b22;padding:8px 6px">
+          <div style="color:#58a6ff;font-size:0.6rem;margin-bottom:4px;letter-spacing:0.05em">GAME DESIGN</div>
+          <div style="color:#79c0ff;font-size:0.62rem">📁 Docs <span style="color:#484f58">(12)</span></div>
+          <div style="color:#484f58;font-size:0.6rem;padding-left:8px">├ Design.md</div>
+          <div style="color:#e6edf3;font-size:0.6rem;padding-left:8px;background:#21262d;border-radius:2px">└ ECS.md</div>
+          <div style="color:#79c0ff;font-size:0.62rem;margin-top:4px">📁 API <span style="color:#484f58">(5)</span></div>
+        </div>
+        <div style="background:#1f2428;padding:8px">
+          <div style="color:#e6edf3;font-size:0.68rem;font-weight:600;margin-bottom:6px">ECS Architecture</div>
+          <div style="height:3px;width:60%;background:#58a6ff;border-radius:2px;margin-bottom:6px;opacity:0.6"></div>
+          <div style="height:2px;width:90%;background:#30363d;border-radius:2px;margin-bottom:3px"></div>
+          <div style="height:2px;width:75%;background:#30363d;border-radius:2px;margin-bottom:3px"></div>
+          <div style="height:2px;width:85%;background:#79c0ff;border-radius:2px;margin-bottom:3px;opacity:0.5"></div>
+          <div style="height:2px;width:70%;background:#30363d;border-radius:2px"></div>
+        </div>
+      </div>
+      <div style="height:18px;background:#0d1117;display:flex;align-items:center;padding:0 8px">
+        <span style="color:#d29922;font-size:0.58rem">⚠ 87 days ago</span>
+        <span style="color:#484f58;font-size:0.58rem;margin-left:auto">ECS.md</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — GitHub Dark</h3>
+      <p>파랑/회색 계열 중립 다크. 친숙하고 전문적. 개발자에게 익숙한 분위기.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0;overflow:hidden;border-radius:4px;height:160px;background:#1a1a1a">
+      <!-- Minimal Dark (Obsidian-like) -->
+      <div style="height:24px;background:#141414;display:flex;align-items:center;padding:0 10px;gap:6px">
+        <span style="width:8px;height:8px;border-radius:50%;background:#ff453a;display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:#ff9f0a;display:inline-block"></span>
+        <span style="width:8px;height:8px;border-radius:50%;background:#32d74b;display:inline-block"></span>
+        <span style="color:#3a3a3a;font-size:0.65rem;margin-left:auto">Markdown Organizer</span>
+      </div>
+      <div style="display:grid;grid-template-columns:36px 140px 1fr;height:calc(100% - 44px);gap:1px;margin-top:1px">
+        <div style="background:#141414;display:flex;flex-direction:column;align-items:center;padding-top:8px;gap:8px">
+          <div style="width:22px;height:22px;border-radius:4px;background:#a78bfa;opacity:0.9"></div>
+          <div style="width:22px;height:22px;border-radius:4px;background:#3a3a3a;opacity:0.5"></div>
+          <div style="width:22px;height:22px;border-radius:4px;background:#3a3a3a;opacity:0.5"></div>
+        </div>
+        <div style="background:#141414;padding:8px 6px">
+          <div style="color:#a78bfa;font-size:0.6rem;margin-bottom:4px;letter-spacing:0.05em">GAME DESIGN</div>
+          <div style="color:#818cf8;font-size:0.62rem">📁 Docs <span style="color:#3a3a3a">(12)</span></div>
+          <div style="color:#3a3a3a;font-size:0.6rem;padding-left:8px">├ Design.md</div>
+          <div style="color:#e2e2e2;font-size:0.6rem;padding-left:8px;background:#2a2a2a;border-radius:2px">└ ECS.md</div>
+          <div style="color:#818cf8;font-size:0.62rem;margin-top:4px">📁 API <span style="color:#3a3a3a">(5)</span></div>
+        </div>
+        <div style="background:#1a1a1a;padding:8px">
+          <div style="color:#e2e2e2;font-size:0.68rem;font-weight:600;margin-bottom:6px">ECS Architecture</div>
+          <div style="height:3px;width:60%;background:#a78bfa;border-radius:2px;margin-bottom:6px;opacity:0.6"></div>
+          <div style="height:2px;width:90%;background:#2a2a2a;border-radius:2px;margin-bottom:3px"></div>
+          <div style="height:2px;width:75%;background:#2a2a2a;border-radius:2px;margin-bottom:3px"></div>
+          <div style="height:2px;width:85%;background:#818cf8;border-radius:2px;margin-bottom:3px;opacity:0.5"></div>
+          <div style="height:2px;width:70%;background:#2a2a2a;border-radius:2px"></div>
+        </div>
+      </div>
+      <div style="height:18px;background:#0a0a0a;display:flex;align-items:center;padding:0 8px">
+        <span style="color:#f59e0b;font-size:0.58rem">⚠ 87 days ago</span>
+        <span style="color:#3a3a3a;font-size:0.58rem;margin-left:auto">ECS.md</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Minimal Dark (Obsidian 스타일)</h3>
+      <p>순수 검정 계열. 극도로 미니멀. OLED 친화. Black 모드가 기본값인 느낌.</p>
+    </div>
+  </div>
+
+</div>

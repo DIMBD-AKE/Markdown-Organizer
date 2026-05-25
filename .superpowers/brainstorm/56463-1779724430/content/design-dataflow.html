@@ -1,0 +1,121 @@
+<h2>설계 — 섹션 3: 핵심 데이터 흐름</h2>
+<p class="subtitle">3가지 핵심 시나리오의 완전한 흐름</p>
+
+<div class="section">
+  <span class="label">① 문서 열기 흐름</span>
+  <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.73rem;line-height:1">
+    <div style="display:flex;flex-direction:column;gap:0.4rem">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#313244;padding:0.3rem 0.6rem;border-radius:3px;color:#cdd6f4;white-space:nowrap">사용자 FileNode 클릭</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">fileTreeStore.selectFile(path)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">window.api.readFile(path) 호출</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#1a1a3a;padding:0.3rem 0.6rem;border-radius:3px;color:#89b4fa;white-space:nowrap">preload contextBridge</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1a1a3a;padding:0.3rem 0.6rem;border-radius:3px;color:#cba6f7;white-space:nowrap">Main: ipcMain.handle('read-file')</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">fs.readFile() → UTF-8 string 반환</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">viewerStore.setContent(raw)</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">remark 파이프라인 처리</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">Shiki 하이라이트 → Mermaid 렌더 → TOC 추출</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#313244;padding:0.3rem 0.6rem;border-radius:3px;color:#cdd6f4;white-space:nowrap">MarkdownRenderer 표시</div>
+        <div style="color:#6c7086">+</div>
+        <div style="background:#313244;padding:0.3rem 0.6rem;border-radius:3px;color:#cdd6f4;white-space:nowrap">TocPanel 업데이트</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">SQLite project_state 업데이트 (last_file, scroll_pos)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">② 앱 시작 — 상태 복원 흐름</span>
+  <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.73rem;line-height:1">
+    <div style="display:flex;flex-direction:column;gap:0.4rem">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#1a1a3a;padding:0.3rem 0.6rem;border-radius:3px;color:#cba6f7;white-space:nowrap">Main: app.whenReady()</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1a1a3a;padding:0.3rem 0.6rem;border-radius:3px;color:#cba6f7;white-space:nowrap">SQLite open + schema 확인</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">app_settings 읽기 → 윈도우 크기/위치 복원</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#1a1a3a;padding:0.3rem 0.6rem;border-radius:3px;color:#cba6f7;white-space:nowrap">BrowserWindow 생성</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">Renderer mount</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">App init: window.api.getAppState() 호출</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">projectStore 복원</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">fileTreeStore 복원</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">마지막 문서 자동 열기</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">스크롤 위치 복원 → chokidar 감시 시작</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">③ 파일 변경 감지 → 자동 갱신</span>
+  <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.73rem;line-height:1">
+    <div style="display:flex;flex-direction:column;gap:0.4rem">
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#1a1a3a;padding:0.3rem 0.6rem;border-radius:3px;color:#cba6f7;white-space:nowrap">chokidar 파일 변경 감지</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1a1a3a;padding:0.3rem 0.6rem;border-radius:3px;color:#cba6f7;white-space:nowrap">200ms debounce</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">변경 유형 판별: 추가 / 수정 / 삭제</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#1a1a3a;padding:0.3rem 0.6rem;border-radius:3px;color:#cba6f7;white-space:nowrap">win.webContents.send('file-changed', payload)</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem;padding-left:1rem">
+        <div style="color:#6c7086">↓</div>
+        <div style="color:#6c7086;font-size:0.68rem">Renderer: useEffect 리스너 수신</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">현재 열린 파일이면</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#1e3a1e;padding:0.3rem 0.6rem;border-radius:3px;color:#a6e3a1;white-space:nowrap">자동 리로드</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.5rem">
+        <div style="background:#313244;padding:0.3rem 0.6rem;border-radius:3px;color:#cdd6f4;white-space:nowrap">트리 노드만 변경이면</div>
+        <div style="color:#6c7086">→</div>
+        <div style="background:#313244;padding:0.3rem 0.6rem;border-radius:3px;color:#cdd6f4;white-space:nowrap">fileTreeStore만 업데이트</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:1.5rem;padding:0.75rem 1rem;background:#1a1a1a;border-radius:6px;border-left:3px solid #a6e3a1">
+  <p style="margin:0;color:#cdd6f4;font-size:0.85rem">섹션 3 확인 후 → 섹션 4: 에러 처리 & 테스트 전략 (마지막 섹션)</p>
+</div>

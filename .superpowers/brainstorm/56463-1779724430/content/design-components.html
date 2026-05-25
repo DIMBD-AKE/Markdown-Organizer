@@ -1,0 +1,117 @@
+<h2>설계 — 섹션 2: UI 컴포넌트 트리 & 디렉터리 구조</h2>
+<p class="subtitle">Activity Bar + 3-Panel 레이아웃 기반 컴포넌트 계층</p>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+
+  <div class="section">
+    <span class="label">컴포넌트 트리</span>
+    <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.75rem;line-height:1.9;color:#cdd6f4">
+      <div style="color:#cba6f7">App</div>
+      <div>├── <span style="color:#89b4fa">TitleBar</span> <span style="color:#6c7086">(커스텀 드래그 영역)</span></div>
+      <div>├── <span style="color:#89b4fa">AppShell</span></div>
+      <div>│&nbsp;&nbsp; ├── <span style="color:#a6e3a1">ActivityBar</span></div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; ├── ProjectIcon <span style="color:#6c7086">×n</span></div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; └── SettingsIcon</div>
+      <div>│&nbsp;&nbsp; ├── <span style="color:#a6e3a1">FileTreePanel</span></div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; ├── ProjectHeader</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; ├── SearchBar</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; ├── FilterBar</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; └── FileTree</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; ├── FolderNode</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; └── FileNode</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; └── StatusDot <span style="color:#6c7086">(신선도)</span></div>
+      <div>│&nbsp;&nbsp; ├── <span style="color:#a6e3a1">DocumentViewer</span></div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; ├── DocHeader</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; │&nbsp;&nbsp; ├── Breadcrumb</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; │&nbsp;&nbsp; ├── FreshnessTag</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; │&nbsp;&nbsp; └── NavButtons <span style="color:#6c7086">(←→)</span></div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; └── MarkdownRenderer</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; ├── CodeBlock <span style="color:#6c7086">(Shiki)</span></div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; └── MermaidDiagram</div>
+      <div>│&nbsp;&nbsp; └── <span style="color:#a6e3a1">TocPanel</span></div>
+      <div>│&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; ├── TocSearch</div>
+      <div>│&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; └── TocTree</div>
+      <div>│&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; └── TocItem</div>
+      <div>└── <span style="color:#89b4fa">StatusBar</span></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <span class="label">디렉터리 구조</span>
+    <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-family:monospace;font-size:0.73rem;line-height:1.9;color:#cdd6f4">
+      <div style="color:#cba6f7">src/</div>
+      <div>├── <span style="color:#f9e2af">main/</span> <span style="color:#6c7086"># Electron Main</span></div>
+      <div>│&nbsp;&nbsp; ├── index.ts</div>
+      <div>│&nbsp;&nbsp; ├── <span style="color:#89b4fa">ipc/</span></div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; ├── projects.ts</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; ├── files.ts</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; └── settings.ts</div>
+      <div>│&nbsp;&nbsp; ├── <span style="color:#89b4fa">db/</span></div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; ├── schema.ts</div>
+      <div>│&nbsp;&nbsp; │&nbsp;&nbsp; └── queries.ts</div>
+      <div>│&nbsp;&nbsp; ├── watcher.ts <span style="color:#6c7086"># chokidar</span></div>
+      <div>│&nbsp;&nbsp; └── analyzer.ts <span style="color:#6c7086"># 프로젝트 유형</span></div>
+      <div>├── <span style="color:#f9e2af">preload/</span></div>
+      <div>│&nbsp;&nbsp; └── index.ts <span style="color:#6c7086"># contextBridge API</span></div>
+      <div>└── <span style="color:#f9e2af">renderer/</span> <span style="color:#6c7086"># React 앱</span></div>
+      <div>&nbsp;&nbsp;&nbsp; ├── <span style="color:#89b4fa">components/</span></div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; ├── ActivityBar/</div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; ├── FileTree/</div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; ├── Viewer/</div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; ├── TocPanel/</div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; └── StatusBar/</div>
+      <div>&nbsp;&nbsp;&nbsp; ├── <span style="color:#89b4fa">stores/</span> <span style="color:#6c7086"># Zustand</span></div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; ├── projectStore.ts</div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; ├── fileTreeStore.ts</div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; ├── viewerStore.ts</div>
+      <div>&nbsp;&nbsp;&nbsp; │&nbsp;&nbsp; └── uiStore.ts</div>
+      <div>&nbsp;&nbsp;&nbsp; ├── <span style="color:#89b4fa">hooks/</span></div>
+      <div>&nbsp;&nbsp;&nbsp; └── <span style="color:#89b4fa">types/</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="section" style="margin-top:1rem">
+  <span class="label">Zustand 스토어 책임 분리</span>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.75rem;margin-top:0.75rem">
+    <div style="background:#181825;padding:0.7rem;border-radius:4px;font-size:0.75rem">
+      <div style="color:#cba6f7;margin-bottom:0.3rem">projectStore</div>
+      <ul style="margin:0;padding-left:1rem;color:#6c7086;line-height:1.7">
+        <li>등록 프로젝트 목록</li>
+        <li>활성 프로젝트</li>
+        <li>프로젝트 유형/아이콘</li>
+      </ul>
+    </div>
+    <div style="background:#181825;padding:0.7rem;border-radius:4px;font-size:0.75rem">
+      <div style="color:#89b4fa;margin-bottom:0.3rem">fileTreeStore</div>
+      <ul style="margin:0;padding-left:1rem;color:#6c7086;line-height:1.7">
+        <li>트리 데이터</li>
+        <li>펼침/접힘 상태</li>
+        <li>선택 파일</li>
+        <li>필터 상태</li>
+      </ul>
+    </div>
+    <div style="background:#181825;padding:0.7rem;border-radius:4px;font-size:0.75rem">
+      <div style="color:#a6e3a1;margin-bottom:0.3rem">viewerStore</div>
+      <ul style="margin:0;padding-left:1rem;color:#6c7086;line-height:1.7">
+        <li>현재 문서 내용</li>
+        <li>스크롤 위치</li>
+        <li>탐색 히스토리</li>
+        <li>TOC 항목</li>
+      </ul>
+    </div>
+    <div style="background:#181825;padding:0.7rem;border-radius:4px;font-size:0.75rem">
+      <div style="color:#f9e2af;margin-bottom:0.3rem">uiStore</div>
+      <ul style="margin:0;padding-left:1rem;color:#6c7086;line-height:1.7">
+        <li>테마 (dark/black)</li>
+        <li>패널 너비</li>
+        <li>사이드바 접힘</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:1.5rem;padding:0.75rem 1rem;background:#1a1a1a;border-radius:6px;border-left:3px solid #a6e3a1">
+  <p style="margin:0;color:#cdd6f4;font-size:0.85rem">섹션 2 확인 후 → 섹션 3: 핵심 기능 데이터 흐름 (파일 열기, 상태 저장, 파일 감시)</p>
+</div>

@@ -1,0 +1,96 @@
+<h2>설계 — 섹션 4: 에러 처리 & 테스트 전략</h2>
+<p class="subtitle">마지막 섹션. 실패 케이스 처리와 검증 전략.</p>
+
+<div class="section">
+  <span class="label">에러 처리 경계</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:0.75rem">
+
+    <div style="background:#181825;padding:1rem;border-radius:6px">
+      <div style="color:#cba6f7;font-size:0.75rem;margin-bottom:0.5rem">⚡ Main Process 에러</div>
+      <ul style="margin:0;padding-left:1rem;color:#cdd6f4;font-size:0.8rem;line-height:2">
+        <li><span style="color:#f38ba8">파일 없음</span> → IPC error 반환, Renderer 빈 상태 표시</li>
+        <li><span style="color:#f38ba8">권한 거부</span> → 에러 메시지 + 폴더 재선택 유도</li>
+        <li><span style="color:#f38ba8">SQLite 실패</span> → 로그 기록 후 인메모리 fallback</li>
+        <li><span style="color:#f38ba8">프로젝트 경로 소실</span> → 목록에서 경고 배지 표시</li>
+      </ul>
+    </div>
+
+    <div style="background:#181825;padding:1rem;border-radius:6px">
+      <div style="color:#a6e3a1;font-size:0.75rem;margin-bottom:0.5rem">⚛️ Renderer 에러</div>
+      <ul style="margin:0;padding-left:1rem;color:#cdd6f4;font-size:0.8rem;line-height:2">
+        <li><span style="color:#f38ba8">Markdown 파싱 실패</span> → raw 텍스트 fallback 표시</li>
+        <li><span style="color:#f38ba8">Mermaid 문법 오류</span> → 다이어그램 위치에 오류 메시지</li>
+        <li><span style="color:#f38ba8">컴포넌트 충돌</span> → React ErrorBoundary로 격리</li>
+        <li><span style="color:#f38ba8">이미지 경로 오류</span> → alt 텍스트로 대체</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">테스트 전략</span>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;margin-top:0.75rem">
+
+    <div style="background:#181825;padding:0.8rem;border-radius:6px">
+      <div style="color:#89b4fa;font-size:0.75rem;margin-bottom:0.5rem">Unit — Vitest</div>
+      <ul style="margin:0;padding-left:1rem;color:#6c7086;font-size:0.78rem;line-height:1.8">
+        <li>Zustand 스토어 로직</li>
+        <li>analyzer.ts (유형 분석)</li>
+        <li>TOC 파싱 유틸</li>
+        <li>FreshnessTag 날짜 계산</li>
+        <li>SQLite 쿼리 함수</li>
+      </ul>
+    </div>
+
+    <div style="background:#181825;padding:0.8rem;border-radius:6px">
+      <div style="color:#f9e2af;font-size:0.75rem;margin-bottom:0.5rem">Integration — Vitest</div>
+      <ul style="margin:0;padding-left:1rem;color:#6c7086;font-size:0.78rem;line-height:1.8">
+        <li>IPC handler 입출력</li>
+        <li>파일 읽기 → 렌더 흐름</li>
+        <li>상태 저장 / 복원 사이클</li>
+        <li>chokidar 이벤트 → 스토어</li>
+      </ul>
+    </div>
+
+    <div style="background:#181825;padding:0.8rem;border-radius:6px">
+      <div style="color:#cba6f7;font-size:0.75rem;margin-bottom:0.5rem">E2E — Playwright</div>
+      <ul style="margin:0;padding-left:1rem;color:#6c7086;font-size:0.78rem;line-height:1.8">
+        <li>프로젝트 등록 → 파일 열기</li>
+        <li>앱 재시작 → 상태 복원</li>
+        <li>Mermaid 렌더 확인</li>
+        <li>TOC 클릭 → 스크롤 이동</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">성능 경계값 (README 목표 기준)</span>
+  <div style="background:#0d0d14;border-radius:6px;padding:1rem;margin-top:0.75rem;font-size:0.8rem;line-height:2">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;text-align:center">
+      <div>
+        <div style="color:#a6e3a1;font-size:1.1rem;font-weight:700">10,000+</div>
+        <div style="color:#6c7086;font-size:0.72rem">파일 트리 렌더<br/>가상 스크롤 적용</div>
+      </div>
+      <div>
+        <div style="color:#a6e3a1;font-size:1.1rem;font-weight:700">&lt; 200ms</div>
+        <div style="color:#6c7086;font-size:0.72rem">파일 열기 응답<br/>(캐시 없는 첫 열기)</div>
+      </div>
+      <div>
+        <div style="color:#a6e3a1;font-size:1.1rem;font-weight:700">200ms</div>
+        <div style="color:#6c7086;font-size:0.72rem">chokidar debounce<br/>불필요한 리로드 방지</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <span class="label">FileTree 가상 스크롤</span>
+  <div style="background:#181825;border-radius:6px;padding:0.8rem;margin-top:0.75rem;font-size:0.8rem;color:#cdd6f4">
+    10k+ 파일 대응: <strong>@tanstack/react-virtual</strong> 사용. 트리를 평탄화(flatten)한 뒤 가상 목록으로 렌더. 펼침/접힘 상태는 Set으로 관리.
+  </div>
+</div>
+
+<div style="margin-top:1.5rem;padding:0.75rem 1rem;background:#1a1a1a;border-radius:6px;border-left:3px solid #cba6f7">
+  <p style="margin:0;color:#cdd6f4;font-size:0.85rem">전체 설계 완료. 확인 후 설계 문서(spec) 작성 진행합니다.</p>
+</div>
