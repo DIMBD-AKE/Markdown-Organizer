@@ -1,3 +1,4 @@
+import fs from 'fs'
 import type { ProjectType } from '../renderer/src/types'
 
 interface Rule {
@@ -51,7 +52,6 @@ export function getProjectIcon(type: ProjectType): string {
 }
 
 export function analyzeDirectory(dirPath: string): { type: ProjectType; icon: string } {
-  const fs = require('fs') as typeof import('fs')
   let entries: string[] = []
   try {
     entries = fs.readdirSync(dirPath).map((e: string) => e)
