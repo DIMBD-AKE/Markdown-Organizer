@@ -4,8 +4,6 @@ import { useFileTreeStore } from '../../stores/fileTreeStore'
 import type { Freshness } from '../../types'
 import path from 'path'
 
-// Uses CSS-variable-backed Tailwind colors — switches correctly in all themes.
-// Latte: green=#40a02b, yellow=#df8e1d, red=#d20f39 (all high contrast on light bg)
 const BADGE: Record<Freshness, string> = {
   fresh: 'text-green  border-green  bg-green/10',
   warn:  'text-yellow border-yellow bg-yellow/10',
@@ -22,25 +20,45 @@ export default function DocHeader() {
   const modifiedAt = findModifiedAt(tree, filePath) ?? Date.now()
   const freshness = getFreshness(modifiedAt)
 
+  const canGoBack    = historyIndex > 0
+  const canGoForward = historyIndex < history.length - 1
+
+  /**
+   * Navigate back or forward.
+   * goBack()/goForward() already update historyIndex and return the target path.
+   * We use loadFile (not setFile) so history is not re-appended.
+   */
   async function navigate(getPath: () => string | null) {
     const p = getPath()
     if (!p) return
-    const { content, error } = await window.api.readFile(p)
-    if (content) useViewerStore.getState().setFile(p, content)
-    else useViewerStore.getState().setError(error ?? '읽기 실패')
+    try {
+      const { content, error } = await window.api.readFile(p)
+      if (content) {
+        useViewerStore.getState().loadFile(p, content)
+      } else {
+        // On error the historyIndex was already moved — move it back to be safe
+        useViewerStore.getState().setError(error ?? '읽기 실패')
+      }
+    } catch (err) {
+      useViewerStore.getState().setError(err instanceof Error ? err.message : '읽기 실패')
+    }
   }
 
   return (
     <div className="flex items-center gap-2 px-4 py-2 border-b border-surface0 bg-mantle flex-shrink-0">
       <button
-        disabled={historyIndex <= 0}
+        disabled={!canGoBack}
         onClick={() => navigate(goBack)}
-        className="text-overlay0 hover:text-text disabled:opacity-30 text-sm px-1 transition-colors"
+        title="뒤로"
+        className="text-overlay0 hover:text-text disabled:opacity-30 disabled:cursor-not-allowed
+          text-sm px-1 transition-colors"
       >←</button>
       <button
-        disabled={historyIndex >= history.length - 1}
+        disabled={!canGoForward}
         onClick={() => navigate(goForward)}
-        className="text-overlay0 hover:text-text disabled:opacity-30 text-sm px-1 transition-colors"
+        title="앞으로"
+        className="text-overlay0 hover:text-text disabled:opacity-30 disabled:cursor-not-allowed
+          text-sm px-1 transition-colors"
       >→</button>
       <span className="text-sm text-text font-medium truncate flex-1">{fileName}</span>
       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-mono flex-shrink-0 ${BADGE[freshness]}`}>

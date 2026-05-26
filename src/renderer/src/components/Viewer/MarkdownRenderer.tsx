@@ -44,7 +44,7 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
           const lastSlash = filePath.lastIndexOf('/')
           const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
           const abs = href.startsWith('/') ? href : `${base}/${href}`
-          useViewerStore.getState().navigateTo(abs)
+          // setFile handles history — don't call navigateTo separately (would double-add)
           window.api.readFile(abs).then(({ content: c, error }) => {
             if (c) useViewerStore.getState().setFile(abs, c)
             else useViewerStore.getState().setError(error ?? '읽기 실패')
