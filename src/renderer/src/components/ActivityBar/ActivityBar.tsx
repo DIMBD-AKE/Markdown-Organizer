@@ -7,20 +7,29 @@ export default function ActivityBar() {
   const { setTree, setLoading } = useFileTreeStore()
 
   async function handleAddProject() {
-    const folderPath = await window.api.selectFolder()
-    if (!folderPath) return
-    const project = await window.api.addProject(folderPath)
-    useProjectStore.getState().addProject(project)
-    selectProject(project.id, project.path)
+    try {
+      const folderPath = await window.api.selectFolder()
+      if (!folderPath) return
+      const project = await window.api.addProject(folderPath)
+      useProjectStore.getState().addProject(project)
+      selectProject(project.id, project.path)
+    } catch (err) {
+      console.error('Failed to add project:', err)
+    }
   }
 
   async function selectProject(id: string, path: string) {
     setActiveProject(id)
     window.api.setSetting('active_project_id', id)
     setLoading(true)
-    const tree = await window.api.getFileTree(path)
-    setTree(tree)
-    setLoading(false)
+    try {
+      const tree = await window.api.getFileTree(path)
+      setTree(tree)
+    } catch (err) {
+      console.error('Failed to load file tree:', err)
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
