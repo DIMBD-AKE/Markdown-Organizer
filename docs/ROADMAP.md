@@ -33,6 +33,9 @@
 - `setFile` (히스토리 추가) / `loadFile` (히스토리 유지) 분리
 - 뒤로/앞으로 클릭 → 올바른 인덱스 이동
 
+**Handoff Note (2026-05-26 22:00):**
+앱 실행 및 프로덕션 빌드 정상. 주요 렌더링 버그(Mermaid, StrictMode, 히스토리 파괴, 이중 히스토리, 테마 색상) 7건 수정 완료. SQLite vitest 테스트 5개는 Electron ↔ 시스템 Node ABI 불일치로 M1 이전부터 존재하는 실패 — 앱 동작 무관. M2에서 해결. 잔여 버그 3종(Mermaid 불안정, 코드 블록 미완, 파일 트리 nav 동기화)이 M2 목표. work-log: `docs/work-logs/2026-05-26-milestone-1-foundation.md`
+
 ---
 
 ## M2 · 버그 픽스 🐛 `fix/m2-polish`
@@ -57,6 +60,10 @@
 - [ ] 뒤로/앞으로 클릭 시 좌측 파일 트리 선택 항목 동기화
 - [ ] 파일 트리 자동 스크롤 → 현재 파일 위치로 이동
 - [ ] 선택된 파일 시각적 강조 (뷰어에서 직접 열었을 때도 포함)
+
+**테스트 인프라**
+- [ ] `better-sqlite3` vitest ABI 불일치 해결 (Electron Node vs 시스템 Node)
+- [ ] SQLite 레이어 mock 분리 또는 vitest electron 환경 설정
 
 ---
 
