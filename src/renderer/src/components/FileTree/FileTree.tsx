@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import { useViewerStore } from '../../stores/viewerStore'
 import { flattenTree } from '../../utils/flattenTree'
@@ -18,7 +18,7 @@ export default function FileTree() {
   const mountedRef = useRef(true)
 
   // Track mounted state for async safety
-  useCallback(() => () => { mountedRef.current = false }, [])
+  useEffect(() => () => { mountedRef.current = false }, [])
 
   const items = tree ? flattenTree(tree.children ?? [], expandedDirs) : []
 
