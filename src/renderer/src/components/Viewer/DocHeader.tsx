@@ -1,6 +1,7 @@
 import { useViewerStore } from '../../stores/viewerStore'
 import { getFreshness, formatAge } from '../../utils/freshness'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
+import { useSearchStore } from '../../stores/searchStore'
 import type { Freshness } from '../../types'
 import path from 'path'
 
@@ -11,8 +12,19 @@ const BADGE: Record<Freshness, string> = {
 }
 
 export default function DocHeader() {
-  const { filePath, history, historyIndex, goBack, goForward } = useViewerStore()
-  const { tree } = useFileTreeStore()
+  const filePath      = useViewerStore((s) => s.filePath)
+  const history       = useViewerStore((s) => s.history)
+  const historyIndex  = useViewerStore((s) => s.historyIndex)
+  const goBack        = useViewerStore((s) => s.goBack)
+  const goForward     = useViewerStore((s) => s.goForward)
+
+  const tree = useFileTreeStore((s) => s.tree)
+
+  const activeFilePath    = useSearchStore((s) => s.activeFilePath)
+  const activeMatchIndex  = useSearchStore((s) => s.activeMatchIndex)
+  const totalMatchCount   = useSearchStore((s) => s.totalMatchCount)
+  const setActiveMatchIndex = useSearchStore((s) => s.setActiveMatchIndex)
+  const clearSearch       = useSearchStore((s) => s.clearSearch)
 
   if (!filePath) return null
 
@@ -22,6 +34,8 @@ export default function DocHeader() {
 
   const canGoBack    = historyIndex > 0
   const canGoForward = historyIndex < history.length - 1
+
+  const isSearchActive = activeFilePath === filePath && totalMatchCount > 0
 
   /**
    * Navigate back or forward.
@@ -64,6 +78,30 @@ export default function DocHeader() {
           text-sm px-1 transition-colors"
       >→</button>
       <span className="text-sm text-text font-medium truncate flex-1">{fileName}</span>
+      {isSearchActive && (
+        <>
+          <span className="text-xs text-overlay0 font-mono flex-shrink-0">
+            {activeMatchIndex + 1}/{totalMatchCount}
+          </span>
+          <button
+            disabled={activeMatchIndex <= 0}
+            onClick={() => setActiveMatchIndex(activeMatchIndex - 1)}
+            title="이전 검색 결과"
+            className="text-overlay0 hover:text-text disabled:opacity-30 disabled:cursor-not-allowed text-sm px-1 transition-colors"
+          >↑</button>
+          <button
+            disabled={activeMatchIndex >= totalMatchCount - 1}
+            onClick={() => setActiveMatchIndex(activeMatchIndex + 1)}
+            title="다음 검색 결과"
+            className="text-overlay0 hover:text-text disabled:opacity-30 disabled:cursor-not-allowed text-sm px-1 transition-colors"
+          >↓</button>
+          <button
+            onClick={clearSearch}
+            title="검색 초기화"
+            className="text-overlay0 hover:text-red text-sm px-1 transition-colors flex-shrink-0"
+          >×</button>
+        </>
+      )}
       <span className={`text-[10px] px-2 py-0.5 rounded-full border font-mono flex-shrink-0 ${BADGE[freshness]}`}>
         {formatAge(modifiedAt)}
       </span>
