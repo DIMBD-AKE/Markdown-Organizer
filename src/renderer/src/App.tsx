@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useProjectStore } from './stores/projectStore'
 import { useUiStore } from './stores/uiStore'
 import ActivityBar from './components/ActivityBar/ActivityBar'
+import FileTreePanel from './components/FileTree/FileTreePanel'
 
 export default function App() {
   const setProjects = useProjectStore((s) => s.setProjects)
@@ -20,6 +21,7 @@ export default function App() {
     <div className="flex flex-col h-screen bg-base text-text select-none">
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar />
+        <FileTreePanel />
         <div className="flex-1 flex items-center justify-center text-overlay0 text-sm">
           파일을 선택하세요
         </div>
