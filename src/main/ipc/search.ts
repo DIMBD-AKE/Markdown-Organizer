@@ -17,7 +17,7 @@ export function collectMdFiles(dirPath: string): string[] {
     const fullPath = path.join(dirPath, entry.name)
     if (entry.isDirectory()) {
       results.push(...collectMdFiles(fullPath))
-    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+    } else if (entry.isFile() && (entry.name.endsWith('.md') || entry.name.endsWith('.markdown'))) {
       results.push(fullPath)
     }
   }
@@ -95,11 +95,12 @@ export function searchInFiles(
   return { results }
 }
 
+// scope filtering is the renderer's responsibility — projectPaths must be pre-filtered by the caller
 export function registerSearchHandlers(): void {
   ipcMain.handle(IPC.SEARCH_FILES, (_e, queryObj: SearchQuery) => {
     const { query, mode, projectPaths } = queryObj
 
-    if (!query) {
+    if (!query || !Array.isArray(projectPaths)) {
       return { results: [] }
     }
 

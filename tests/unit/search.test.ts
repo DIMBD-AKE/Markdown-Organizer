@@ -65,6 +65,15 @@ describe('collectMdFiles', () => {
   it('returns empty array for non-existent directory', () => {
     expect(collectMdFiles('/nonexistent/path/xyz')).toEqual([])
   })
+
+  it('collects .markdown extension files', () => {
+    const markdownFile = path.join(tmpDir, 'extra.markdown')
+    fs.writeFileSync(markdownFile, '# Extra\nsome content')
+    const files = collectMdFiles(tmpDir)
+    const names = files.map(f => path.basename(f))
+    expect(names).toContain('extra.markdown')
+    fs.unlinkSync(markdownFile)
+  })
 })
 
 // ─── searchInFiles — empty query ──────────────────────────────────────────────
