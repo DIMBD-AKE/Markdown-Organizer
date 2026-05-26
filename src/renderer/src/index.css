@@ -97,6 +97,19 @@
   --color-amber-soft: rgba(223, 142, 29, 0.10);
 }
 
+/* ── Search highlight marks ──────────────────────────────── */
+mark.search-mark {
+  background: rgba(249, 226, 175, 0.30);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0;
+}
+mark.search-mark.mark-current {
+  background: rgba(245, 192, 90, 0.65);
+  outline: 1px solid rgba(245, 192, 90, 0.80);
+  border-radius: 2px;
+}
+
 /* ──────────────────────────────────────────────────────────
    Prose — typography token overrides
    tailwind.config.ts sets these via var() in the typography

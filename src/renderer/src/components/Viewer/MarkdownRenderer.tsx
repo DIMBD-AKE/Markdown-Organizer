@@ -1,22 +1,161 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import rehypeRaw from 'rehype-raw'
 import { useViewerStore } from '../../stores/viewerStore'
+import { useSearchStore } from '../../stores/searchStore'
 import { extractToc } from '../../utils/toc'
 import CodeBlock from './CodeBlock'
 import MermaidDiagram from './MermaidDiagram'
 
 interface Props { content: string; filePath: string }
 
+// ── Helper functions (outside component to avoid recreating on every render) ──
+
+function clearMarks(container: HTMLElement): void {
+  const marks = container.querySelectorAll('mark.search-mark')
+  marks.forEach(mark => {
+    const parent = mark.parentNode
+    if (!parent) return
+    while (mark.firstChild) {
+      parent.insertBefore(mark.firstChild, mark)
+    }
+    parent.removeChild(mark)
+    parent.normalize()
+  })
+}
+
+function buildHighlightRegex(query: string, mode: 'string' | 'regex'): RegExp | null {
+  try {
+    if (mode === 'string') {
+      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      return new RegExp(escaped, 'gi')
+    } else {
+      return new RegExp(query, 'gi')
+    }
+  } catch {
+    return null
+  }
+}
+
+function insertMarks(container: HTMLElement, regex: RegExp): HTMLElement[] {
+  const marks: HTMLElement[] = []
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT)
+  const nodesToProcess: Text[] = []
+
+  let node: Node | null
+  while ((node = walker.nextNode())) {
+    nodesToProcess.push(node as Text)
+  }
+
+  for (const textNode of nodesToProcess) {
+    const text = textNode.textContent ?? ''
+    if (!text.trim()) continue
+
+    regex.lastIndex = 0
+    const matches: Array<{ start: number; end: number }> = []
+    let match: RegExpExecArray | null
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match[0].length === 0) { regex.lastIndex++; continue }
+      matches.push({ start: match.index, end: match.index + match[0].length })
+    }
+
+    if (matches.length === 0) continue
+
+    const parent = textNode.parentNode
+    if (!parent) continue
+
+    const fragment = document.createDocumentFragment()
+    let lastIndex = 0
+
+    for (const { start, end } of matches) {
+      if (start > lastIndex) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIndex, start)))
+      }
+      const mark = document.createElement('mark')
+      mark.className = 'search-mark'
+      mark.textContent = text.slice(start, end)
+      fragment.appendChild(mark)
+      marks.push(mark)
+      lastIndex = end
+    }
+
+    if (lastIndex < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(lastIndex)))
+    }
+
+    parent.replaceChild(fragment, textNode)
+  }
+
+  return marks
+}
+
+// ── Component ─────────────────────────────────────────────────────────────────
+
 export default function MarkdownRenderer({ content, filePath }: Props) {
   const setToc = useViewerStore((s) => s.setToc)
+  const articleRef = useRef<HTMLElement>(null)
+
+  // Search store — individual selectors (never destructure)
+  const activeFilePath = useSearchStore((s) => s.activeFilePath)
+  const activeMatchIndex = useSearchStore((s) => s.activeMatchIndex)
+  const searchQuery = useSearchStore((s) => s.query)
+  const searchMode = useSearchStore((s) => s.mode)
+  const setTotalMatchCount = useSearchStore((s) => s.setTotalMatchCount)
 
   useEffect(() => {
     setToc(extractToc(content))
   }, [content, setToc])
+
+  // Effect 1 — Insert marks when content/search changes
+  useEffect(() => {
+    const el = articleRef.current
+    if (!el) return
+
+    clearMarks(el)
+
+    if (activeFilePath !== filePath || !searchQuery.trim()) {
+      setTotalMatchCount(0)
+      return
+    }
+
+    const regex = buildHighlightRegex(searchQuery, searchMode)
+    if (!regex) {
+      setTotalMatchCount(0)
+      return
+    }
+
+    const marks = insertMarks(el, regex)
+    setTotalMatchCount(marks.length)
+
+    if (marks.length > 0) {
+      marks[0].classList.add('mark-current')
+      marks[0].scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+  }, [filePath, content, activeFilePath, searchQuery, searchMode, setTotalMatchCount])
+
+  // Effect 2 — Update current mark when index changes
+  useEffect(() => {
+    const el = articleRef.current
+    if (!el) return
+
+    const marks = Array.from(el.querySelectorAll<HTMLElement>('mark.search-mark'))
+    if (marks.length === 0) return
+
+    marks.forEach(m => m.classList.remove('mark-current'))
+    const target = marks[activeMatchIndex]
+    if (target) {
+      target.classList.add('mark-current')
+      target.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+  }, [activeMatchIndex])
+
+  // Memoize plugin arrays to prevent ReactMarkdown from remounting child components
+  const remarkPluginsArr = useMemo(() => [remarkGfm], [])
+  const rehypePluginsArr = useMemo(() => [rehypeRaw, rehypeSlug], [])
 
   // Memoize components so ReactMarkdown receives stable function references across
   // re-renders. Without this, every parent re-render creates new component types →
@@ -69,10 +208,10 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
   }), [filePath])
 
   return (
-    <article className="prose max-w-none px-8 py-8 font-sans text-text leading-relaxed">
+    <article ref={articleRef} className="prose max-w-none px-8 py-8 font-sans text-text leading-relaxed">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeRaw, rehypeSlug]}
+        remarkPlugins={remarkPluginsArr}
+        rehypePlugins={rehypePluginsArr}
         components={components}
       >
         {content}
