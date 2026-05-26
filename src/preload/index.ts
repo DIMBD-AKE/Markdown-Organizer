@@ -15,7 +15,8 @@ contextBridge.exposeInMainWorld('api', {
   setSetting: (key: string, value: string) => ipcRenderer.invoke(IPC.SET_SETTING, key, value),
 
   onFileChanged: (cb: (payload: { type: string; path: string }) => void) => {
-    ipcRenderer.on(IPC.FILE_CHANGED, (_e, payload) => cb(payload))
-    return () => ipcRenderer.removeAllListeners(IPC.FILE_CHANGED)
+    const listener = (_e: Electron.IpcRendererEvent, payload: { type: string; path: string }) => cb(payload)
+    ipcRenderer.on(IPC.FILE_CHANGED, listener)
+    return () => ipcRenderer.removeListener(IPC.FILE_CHANGED, listener)
   }
 })
