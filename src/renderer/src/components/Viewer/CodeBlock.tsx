@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { getHighlighter } from '../../utils/shiki'
 
 interface Props {
@@ -9,13 +9,17 @@ interface Props {
 export default function CodeBlock({ code, lang }: Props) {
   const [html, setHtml] = useState('')
   const [copied, setCopied] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    getHighlighter().then((hl) => {
-      const out = hl.codeToHtml(code, { lang: lang || 'text', theme: 'catppuccin-mocha' })
-      setHtml(out)
-    })
+    let cancelled = false
+    getHighlighter()
+      .then((hl) => {
+        if (cancelled) return
+        const out = hl.codeToHtml(code, { lang: lang || 'text', theme: 'catppuccin-mocha' })
+        setHtml(out)
+      })
+      .catch((err) => console.error('Shiki error:', err))
+    return () => { cancelled = true }
   }, [code, lang])
 
   function copy() {
@@ -34,7 +38,7 @@ export default function CodeBlock({ code, lang }: Props) {
         {copied ? '✓' : 'copy'}
       </button>
       {html
-        ? <div ref={ref} dangerouslySetInnerHTML={{ __html: html }} className="overflow-x-auto text-sm" />
+        ? <div dangerouslySetInnerHTML={{ __html: html }} className="overflow-x-auto text-sm" />
         : <pre className="p-4 text-sm text-text bg-mantle overflow-x-auto"><code>{code}</code></pre>
       }
     </div>

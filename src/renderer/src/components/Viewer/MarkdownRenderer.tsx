@@ -41,7 +41,8 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
             const handleClick = (e: React.MouseEvent) => {
               if (href?.endsWith('.md')) {
                 e.preventDefault()
-                const base = filePath.substring(0, filePath.lastIndexOf('/'))
+                const lastSlash = filePath.lastIndexOf('/')
+                const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
                 const abs = href.startsWith('/') ? href : `${base}/${href}`
                 useViewerStore.getState().navigateTo(abs)
                 window.api.readFile(abs).then(({ content: c, error }) => {
@@ -53,7 +54,8 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
             return <a href={href} onClick={handleClick} className="text-blue hover:underline" {...props}>{children}</a>
           },
           img({ src, alt, ...props }: any) {
-            const base = filePath.substring(0, filePath.lastIndexOf('/'))
+            const lastSlash = filePath.lastIndexOf('/')
+            const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
             const resolved = src?.startsWith('http') ? src : `file://${base}/${src}`
             return <img src={resolved} alt={alt} className="max-w-full rounded" {...props} />
           }
