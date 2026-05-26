@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback } from 'react'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import { useViewerStore } from '../../stores/viewerStore'
 import { flattenTree } from '../../utils/flattenTree'
@@ -15,9 +15,11 @@ export default function FileTree() {
   const setFile = useViewerStore((s) => s.setFile)
   const setError = useViewerStore((s) => s.setError)
   const parentRef = useRef<HTMLDivElement>(null)
-  const mountedRef = useRef(true)
 
-  useEffect(() => () => { mountedRef.current = false }, [])
+  // NOTE: mountedRef removed intentionally.
+  // React StrictMode (dev) runs effect cleanup before re-mount, leaving the ref
+  // permanently false and silently blocking setFile after every click.
+  // Calling Zustand setFile/setError after unmount is safe — pure in-memory update.
 
   const items = tree ? flattenTree(tree.children ?? [], expandedDirs) : []
 
@@ -35,14 +37,12 @@ export default function FileTree() {
     setSelectedFile(node.path)
     try {
       const { content, error } = await window.api.readFile(node.path)
-      if (!mountedRef.current) return
       if (error || content === null) {
         setError(error ?? '파일을 읽을 수 없습니다')
         return
       }
       setFile(node.path, content)
     } catch (err) {
-      if (!mountedRef.current) return
       setError(err instanceof Error ? err.message : '파일을 읽을 수 없습니다')
     }
   }, [toggleDir, setSelectedFile, setFile, setError])
