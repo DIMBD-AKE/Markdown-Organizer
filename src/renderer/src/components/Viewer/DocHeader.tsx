@@ -49,4 +49,5 @@ function findModifiedAt(node: import('../../types').FileNode | null, targetPath:
     const found = findModifiedAt(child, targetPath)
     if (found !== undefined) return found
   }
+  return undefined
 }

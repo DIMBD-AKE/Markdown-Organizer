@@ -2,6 +2,16 @@ import fs from 'fs'
 import path from 'path'
 import type { FileNode } from '../renderer/src/types'
 
+// Directories that are never useful in a markdown organizer and can be huge.
+// Scanning node_modules recursively can produce 100k+ entries and hang the IPC.
+const EXCLUDED_DIRS = new Set([
+  'node_modules', '.git', '.hg', '.svn',
+  'dist', 'build', 'out', '.next', '.nuxt', '.svelte-kit',
+  '__pycache__', '.pytest_cache', '.mypy_cache',
+  '.turbo', 'coverage', '.nyc_output',
+  '.DS_Store', 'Thumbs.db'
+])
+
 export function buildFileTree(dirPath: string): FileNode {
   const stat = fs.statSync(dirPath)
   const name = path.basename(dirPath)
@@ -15,8 +25,10 @@ export function buildFileTree(dirPath: string): FileNode {
     entries = fs.readdirSync(dirPath, { withFileTypes: true })
   } catch { /* skip dirs without permission */ }
 
-  // skip hidden files/dirs
-  const visible = entries.filter((e) => !e.name.startsWith('.'))
+  // Skip hidden files/dirs and well-known noise directories
+  const visible = entries.filter(
+    (e) => !e.name.startsWith('.') && !EXCLUDED_DIRS.has(e.name)
+  )
   const dirs = visible.filter((e) => e.isDirectory())
   const files = visible.filter((e) => !e.isDirectory() && e.name.endsWith('.md'))
 
@@ -24,8 +36,12 @@ export function buildFileTree(dirPath: string): FileNode {
     ...dirs.map((d) => buildFileTree(path.join(dirPath, d.name))),
     ...files.map((f) => {
       const fp = path.join(dirPath, f.name)
-      const s = fs.statSync(fp)
-      return { name: f.name, path: fp, isDir: false, modifiedAt: s.mtimeMs }
+      try {
+        const s = fs.statSync(fp)
+        return { name: f.name, path: fp, isDir: false, modifiedAt: s.mtimeMs }
+      } catch {
+        return { name: f.name, path: fp, isDir: false, modifiedAt: 0 }
+      }
     })
   ]
 

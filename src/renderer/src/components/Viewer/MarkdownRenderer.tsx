@@ -6,7 +6,7 @@ import remarkRehype from 'remark-rehype'
 import rehypeRaw from 'rehype-raw'
 import rehypeSlug from 'rehype-slug'
 import rehypeReact from 'rehype-react'
-import { createElement, Fragment } from 'react'
+import { jsx, jsxs, Fragment } from 'react/jsx-runtime'
 import CodeBlock from './CodeBlock'
 import MermaidDiagram from './MermaidDiagram'
 import { useViewerStore } from '../../stores/viewerStore'
@@ -29,7 +29,8 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
       .use(rehypeRaw)
       .use(rehypeSlug)
       .use(rehypeReact, {
-        createElement,
+        jsx,
+        jsxs,
         Fragment,
         components: {
           code({ className, children, ...props }: any) {
@@ -67,7 +68,7 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
   }, [content, filePath])
 
   return (
-    <article className="prose prose-invert max-w-none px-8 py-6 text-text leading-relaxed">
+    <article className="prose max-w-none px-8 py-6 text-text leading-relaxed">
       {element}
     </article>
   )

@@ -1,18 +1,27 @@
 @import "tailwindcss";
 @config "../../../tailwind.config.ts";
 
-:root { color-scheme: dark; }
+/* Default CSS variable values (dark theme) — ensures colors work before
+   a theme class is applied and prevents flash of unstyled content. */
+:root {
+  color-scheme: dark;
+  --color-base:     #1e1e2e;
+  --color-mantle:   #181825;
+  --color-crust:    #11111b;
+  --color-surface0: #313244;
+}
 
+/* Theme overrides — applied to the root div via className={`theme-${theme}`} */
 .theme-dark {
-  --color-base: #1e1e2e;
-  --color-mantle: #181825;
-  --color-crust: #11111b;
+  --color-base:     #1e1e2e;
+  --color-mantle:   #181825;
+  --color-crust:    #11111b;
   --color-surface0: #313244;
 }
 
 .theme-black {
-  --color-base: #000000;
-  --color-mantle: #0a0a0a;
-  --color-crust: #000000;
+  --color-base:     #000000;
+  --color-mantle:   #0a0a0a;
+  --color-crust:    #000000;
   --color-surface0: #1a1a1a;
 }

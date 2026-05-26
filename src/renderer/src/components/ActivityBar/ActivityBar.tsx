@@ -1,7 +1,12 @@
+import React from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import ProjectIcon from './ProjectIcon'
 import ThemeToggle from '../ThemeToggle'
+
+// Electron-specific CSS property not in React typings
+const dragStyle = { WebkitAppRegion: 'drag', pointerEvents: 'none' } as React.CSSProperties
+const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
 export default function ActivityBar() {
   const { projects, activeProjectId, setActiveProject } = useProjectStore()
@@ -34,28 +39,33 @@ export default function ActivityBar() {
   }
 
   return (
-    <aside className="w-12 flex flex-col items-center py-2 gap-1 bg-mantle border-r border-surface0">
-      {projects.map((p) => (
-        <ProjectIcon
-          key={p.id}
-          icon={p.icon}
-          name={p.name}
-          isActive={p.id === activeProjectId}
-          onClick={() => selectProject(p.id, p.path)}
-        />
-      ))}
+    <aside className="w-12 flex flex-col items-center pb-2 gap-1 bg-mantle border-r border-surface0">
+      {/* Drag zone for window — covers traffic light area (macOS: ~36px) */}
+      <div style={dragStyle} className="w-full h-9 flex-shrink-0" />
 
-      <div className="flex-1" />
+      <div style={noDragStyle} className="flex flex-col items-center gap-1 flex-1 w-full overflow-hidden">
+        {projects.map((p) => (
+          <ProjectIcon
+            key={p.id}
+            icon={p.icon}
+            name={p.name}
+            isActive={p.id === activeProjectId}
+            onClick={() => selectProject(p.id, p.path)}
+          />
+        ))}
 
-      <ThemeToggle />
+        <div className="flex-1" />
 
-      <button
-        title="프로젝트 추가"
-        onClick={handleAddProject}
-        className="w-9 h-9 rounded-lg flex items-center justify-center text-overlay0 hover:text-text hover:bg-surface0/50 text-xl transition-colors"
-      >
-        +
-      </button>
+        <ThemeToggle />
+
+        <button
+          title="프로젝트 추가"
+          onClick={handleAddProject}
+          className="w-9 h-9 rounded-lg flex items-center justify-center text-overlay0 hover:text-text hover:bg-surface0/50 text-xl transition-colors"
+        >
+          +
+        </button>
+      </div>
     </aside>
   )
 }
