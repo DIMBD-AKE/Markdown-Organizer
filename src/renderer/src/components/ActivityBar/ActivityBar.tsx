@@ -1,6 +1,7 @@
 import { useProjectStore } from '../../stores/projectStore'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import ProjectIcon from './ProjectIcon'
+import ThemeToggle from '../ThemeToggle'
 
 export default function ActivityBar() {
   const { projects, activeProjectId, setActiveProject } = useProjectStore()
@@ -45,6 +46,8 @@ export default function ActivityBar() {
       ))}
 
       <div className="flex-1" />
+
+      <ThemeToggle />
 
       <button
         title="프로젝트 추가"

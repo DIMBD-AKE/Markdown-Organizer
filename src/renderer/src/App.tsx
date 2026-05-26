@@ -13,6 +13,7 @@ import TocPanel from './components/TocPanel/TocPanel'
 export default function App() {
   const setProjects = useProjectStore((s) => s.setProjects)
   const setActiveProject = useProjectStore((s) => s.setActiveProject)
+  const theme = useUiStore((s) => s.theme)
   const setTheme = useUiStore((s) => s.setTheme)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { activeId, scrollToId } = useScrollSync(scrollRef)
@@ -72,7 +73,7 @@ export default function App() {
   }, [setProjects, setActiveProject, setTheme])
 
   return (
-    <div className="flex flex-col h-screen bg-base text-text select-none">
+    <div className={`theme-${theme} flex flex-col h-screen bg-base text-text select-none`}>
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar />
         <FileTreePanel />
