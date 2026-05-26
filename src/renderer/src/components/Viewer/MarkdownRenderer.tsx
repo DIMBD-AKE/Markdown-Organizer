@@ -4,6 +4,7 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeRaw from 'rehype-raw'
+import rehypeSlug from 'rehype-slug'
 import rehypeReact from 'rehype-react'
 import { createElement, Fragment } from 'react'
 import CodeBlock from './CodeBlock'
@@ -26,6 +27,7 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
       .use(remarkGfm)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
+      .use(rehypeSlug)
       .use(rehypeReact, {
         createElement,
         Fragment,

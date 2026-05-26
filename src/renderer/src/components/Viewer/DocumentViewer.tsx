@@ -2,11 +2,12 @@ import { useViewerStore } from '../../stores/viewerStore'
 import DocHeader from './DocHeader'
 import MarkdownRenderer from './MarkdownRenderer'
 import ErrorBoundary from '../ErrorBoundary'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 
-export default function DocumentViewer() {
+interface Props { scrollRef: React.RefObject<HTMLDivElement | null> }
+
+export default function DocumentViewer({ scrollRef }: Props) {
   const { filePath, content, error, scrollPos, setScrollPos } = useViewerStore()
-  const scrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollPos
