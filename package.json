@@ -26,6 +26,8 @@
   "dependencies": {
     "@electron-toolkit/preload": "^3.0.1",
     "@electron-toolkit/utils": "^3.0.0",
+    "@fontsource-variable/literata": "^5.2.8",
+    "@fontsource/geist": "^5.2.9",
     "@shikijs/rehype": "^1.0.0",
     "@tailwindcss/typography": "^0.5.19",
     "@tanstack/react-virtual": "^3.0.0",

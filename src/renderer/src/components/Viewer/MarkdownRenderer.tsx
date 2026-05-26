@@ -68,7 +68,7 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
   }, [content, filePath])
 
   return (
-    <article className="prose max-w-none px-8 py-6 text-text leading-relaxed">
+    <article className="prose max-w-none px-8 py-6 font-serif text-text leading-relaxed">
       {element}
     </article>
   )

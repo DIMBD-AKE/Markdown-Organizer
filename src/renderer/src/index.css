@@ -1,9 +1,26 @@
 @import "tailwindcss";
 @config "../../../tailwind.config.ts";
 
-/* Default CSS variable values (dark theme) — ensures colors work before
-   a theme class is applied and prevents flash of unstyled content. */
+/* ──────────────────────────────────────────────
+   CSS Variables — default to dark (Catppuccin Mocha)
+   Prevents flash of unstyled content before theme class renders.
+   ────────────────────────────────────────────── */
 :root {
+  color-scheme: dark;
+  /* Surface colors — overridden by .theme-* classes */
+  --color-base:        #1e1e2e;
+  --color-mantle:      #181825;
+  --color-crust:       #11111b;
+  --color-surface0:    #313244;
+  /* Accent — static across all themes */
+  --color-amber:       #f5c05a;
+  --color-amber-soft:  rgba(245, 192, 90, 0.10);
+}
+
+/* ──────────────────────────────────────────────
+   Theme classes — applied to root <div> via className={`theme-${theme}`}
+   ────────────────────────────────────────────── */
+.theme-dark {
   color-scheme: dark;
   --color-base:     #1e1e2e;
   --color-mantle:   #181825;
@@ -11,17 +28,63 @@
   --color-surface0: #313244;
 }
 
-/* Theme overrides — applied to the root div via className={`theme-${theme}`} */
-.theme-dark {
-  --color-base:     #1e1e2e;
-  --color-mantle:   #181825;
-  --color-crust:    #11111b;
-  --color-surface0: #313244;
-}
-
 .theme-black {
+  color-scheme: dark;
   --color-base:     #000000;
   --color-mantle:   #0a0a0a;
   --color-crust:    #000000;
   --color-surface0: #1a1a1a;
+}
+
+/* Catppuccin Latte — light theme (DESIGN.md: RISK 3) */
+.theme-latte {
+  color-scheme: light;
+  --color-base:     #eff1f5;
+  --color-mantle:   #e6e9ef;
+  --color-crust:    #dce0e8;
+  --color-surface0: #ccd0da;
+  --color-amber:    #df8e1d;   /* Latte's "yellow" */
+  --color-amber-soft: rgba(223, 142, 29, 0.10);
+}
+
+/* ──────────────────────────────────────────────
+   Prose (Literata) — custom Catppuccin token overrides
+   @tailwindcss/typography uses --tw-prose-* variables.
+   ────────────────────────────────────────────── */
+.prose {
+  --tw-prose-body:          #cdd6f4;
+  --tw-prose-headings:      #cdd6f4;
+  --tw-prose-lead:          #a6adc8;
+  --tw-prose-links:         #89b4fa;
+  --tw-prose-bold:          #cdd6f4;
+  --tw-prose-counters:      #a6adc8;
+  --tw-prose-bullets:       #6c7086;
+  --tw-prose-hr:            #313244;
+  --tw-prose-quotes:        #a6adc8;
+  --tw-prose-quote-borders: #313244;
+  --tw-prose-captions:      #a6adc8;
+  --tw-prose-code:          #cba6f7;
+  --tw-prose-pre-code:      #cdd6f4;
+  --tw-prose-pre-bg:        #181825;
+  --tw-prose-th-borders:    #313244;
+  --tw-prose-td-borders:    #313244;
+}
+
+/* Latte overrides for prose */
+.theme-latte .prose {
+  --tw-prose-body:          #4c4f69;
+  --tw-prose-headings:      #4c4f69;
+  --tw-prose-lead:          #6c6f85;
+  --tw-prose-links:         #1e66f5;
+  --tw-prose-bold:          #4c4f69;
+  --tw-prose-counters:      #6c6f85;
+  --tw-prose-bullets:       #9ca0b0;
+  --tw-prose-hr:            #ccd0da;
+  --tw-prose-quotes:        #6c6f85;
+  --tw-prose-quote-borders: #ccd0da;
+  --tw-prose-code:          #8839ef;
+  --tw-prose-pre-code:      #4c4f69;
+  --tw-prose-pre-bg:        #e6e9ef;
+  --tw-prose-th-borders:    #ccd0da;
+  --tw-prose-td-borders:    #ccd0da;
 }
