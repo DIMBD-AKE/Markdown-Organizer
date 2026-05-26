@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useProjectStore } from './stores/projectStore'
 import { useUiStore } from './stores/uiStore'
+import ActivityBar from './components/ActivityBar/ActivityBar'
 
 export default function App() {
   const setProjects = useProjectStore((s) => s.setProjects)
@@ -18,8 +19,9 @@ export default function App() {
   return (
     <div className="flex flex-col h-screen bg-base text-text select-none">
       <div className="flex flex-1 overflow-hidden">
+        <ActivityBar />
         <div className="flex-1 flex items-center justify-center text-overlay0 text-sm">
-          프로젝트를 등록하세요
+          파일을 선택하세요
         </div>
       </div>
     </div>
