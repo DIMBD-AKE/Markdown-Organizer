@@ -1,5 +1,8 @@
 import { create } from 'zustand'
 
+const DEFAULT_FILE_TREE_WIDTH = 220
+const DEFAULT_TOC_WIDTH = 200
+
 interface UiStore {
   theme: 'dark' | 'black'
   fileTreeWidth: number
@@ -15,8 +18,8 @@ interface UiStore {
 
 export const useUiStore = create<UiStore>((set) => ({
   theme: 'dark',
-  fileTreeWidth: 220,
-  tocWidth: 200,
+  fileTreeWidth: DEFAULT_FILE_TREE_WIDTH,
+  tocWidth: DEFAULT_TOC_WIDTH,
   isFileTreeCollapsed: false,
   isTocCollapsed: false,
   setTheme: (theme) => set({ theme }),

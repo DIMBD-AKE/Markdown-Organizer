@@ -3,8 +3,9 @@ import { useProjectStore } from './stores/projectStore'
 import { useUiStore } from './stores/uiStore'
 
 export default function App() {
-  const { setProjects, setActiveProject } = useProjectStore()
-  const { setTheme } = useUiStore()
+  const setProjects = useProjectStore((s) => s.setProjects)
+  const setActiveProject = useProjectStore((s) => s.setActiveProject)
+  const setTheme = useUiStore((s) => s.setTheme)
 
   useEffect(() => {
     window.api.getAppState().then((state) => {
@@ -12,7 +13,7 @@ export default function App() {
       setActiveProject(state.activeProjectId)
       setTheme(state.theme)
     })
-  }, [])
+  }, [setProjects, setActiveProject, setTheme])
 
   return (
     <div className="flex flex-col h-screen bg-base text-text select-none">

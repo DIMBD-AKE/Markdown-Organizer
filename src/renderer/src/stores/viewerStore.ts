@@ -18,6 +18,10 @@ interface ViewerStore {
   goForward(): string | null
 }
 
+function truncateAndAppend(history: string[], index: number, path: string): string[] {
+  return [...history.slice(0, index + 1), path]
+}
+
 export const useViewerStore = create<ViewerStore>((set, get) => ({
   filePath: null,
   content: null,
@@ -28,7 +32,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   error: null,
   setFile: (path, content) =>
     set((s) => {
-      const history = [...s.history.slice(0, s.historyIndex + 1), path]
+      const history = truncateAndAppend(s.history, s.historyIndex, path)
       return { filePath: path, content, error: null, history, historyIndex: history.length - 1 }
     }),
   setToc: (toc) => set({ toc }),
@@ -36,7 +40,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   setError: (error) => set({ error }),
   navigateTo: (path) =>
     set((s) => {
-      const history = [...s.history.slice(0, s.historyIndex + 1), path]
+      const history = truncateAndAppend(s.history, s.historyIndex, path)
       return { history, historyIndex: history.length - 1 }
     }),
   goBack: () => {
