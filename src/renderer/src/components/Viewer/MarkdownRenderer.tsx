@@ -1,16 +1,13 @@
-import { useMemo, useEffect } from 'react'
-import { unified } from 'unified'
-import remarkParse from 'remark-parse'
+import { useEffect } from 'react'
+import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import remarkRehype from 'remark-rehype'
-import rehypeRaw from 'rehype-raw'
 import rehypeSlug from 'rehype-slug'
-import rehypeReact from 'rehype-react'
-import { jsx, jsxs, Fragment } from 'react/jsx-runtime'
-import CodeBlock from './CodeBlock'
-import MermaidDiagram from './MermaidDiagram'
+import rehypeRaw from 'rehype-raw'
 import { useViewerStore } from '../../stores/viewerStore'
 import { extractToc } from '../../utils/toc'
+import CodeBlock from './CodeBlock'
+import MermaidDiagram from './MermaidDiagram'
 
 interface Props { content: string; filePath: string }
 
@@ -21,55 +18,64 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
     setToc(extractToc(content))
   }, [content, setToc])
 
-  const element = useMemo(() => {
-    const processor = unified()
-      .use(remarkParse)
-      .use(remarkGfm)
-      .use(remarkRehype, { allowDangerousHtml: true })
-      .use(rehypeRaw)
-      .use(rehypeSlug)
-      .use(rehypeReact, {
-        jsx,
-        jsxs,
-        Fragment,
-        components: {
-          code({ className, children, ...props }: any) {
-            const lang = (className ?? '').replace('language-', '')
-            const code = String(children).trim()
-            if (lang === 'mermaid') return <MermaidDiagram chart={code} />
-            if (lang) return <CodeBlock code={code} lang={lang} />
-            return <code className="bg-surface0 rounded px-1 py-0.5 text-sm font-mono text-mauve" {...props}>{children}</code>
-          },
-          a({ href, children, ...props }: any) {
-            const handleClick = (e: React.MouseEvent) => {
-              if (href?.endsWith('.md')) {
-                e.preventDefault()
-                const lastSlash = filePath.lastIndexOf('/')
-                const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
-                const abs = href.startsWith('/') ? href : `${base}/${href}`
-                useViewerStore.getState().navigateTo(abs)
-                window.api.readFile(abs).then(({ content: c, error }) => {
-                  if (c) useViewerStore.getState().setFile(abs, c)
-                  else useViewerStore.getState().setError(error ?? '읽기 실패')
-                })
-              }
-            }
-            return <a href={href} onClick={handleClick} className="text-blue hover:underline" {...props}>{children}</a>
-          },
-          img({ src, alt, ...props }: any) {
-            const lastSlash = filePath.lastIndexOf('/')
-            const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
-            const resolved = src?.startsWith('http') ? src : `file://${base}/${src}`
-            return <img src={resolved} alt={alt} className="max-w-full rounded" {...props} />
-          }
+  const components: Components = {
+    // Strip <pre> — CodeBlock/MermaidDiagram handle their own wrapper
+    pre: ({ children }) => <>{children}</>,
+
+    code({ className, children }) {
+      const match = /language-(\w+)/.exec(className ?? '')
+      if (match) {
+        const code = String(children).replace(/\n$/, '')
+        if (match[1] === 'mermaid') return <MermaidDiagram chart={code} />
+        return <CodeBlock code={code} lang={match[1]} />
+      }
+      // Inline code
+      return (
+        <code className="bg-surface0 rounded px-1 py-0.5 text-[0.85em] font-mono text-mauve">
+          {children}
+        </code>
+      )
+    },
+
+    a({ href, children }) {
+      const handleClick = (e: React.MouseEvent) => {
+        if (href?.endsWith('.md')) {
+          e.preventDefault()
+          const lastSlash = filePath.lastIndexOf('/')
+          const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
+          const abs = href.startsWith('/') ? href : `${base}/${href}`
+          useViewerStore.getState().navigateTo(abs)
+          window.api.readFile(abs).then(({ content: c, error }) => {
+            if (c) useViewerStore.getState().setFile(abs, c)
+            else useViewerStore.getState().setError(error ?? '읽기 실패')
+          })
         }
-      })
-    return processor.processSync(content).result as React.ReactElement
-  }, [content, filePath])
+      }
+      return (
+        <a href={href} onClick={handleClick} className="text-blue hover:underline">
+          {children}
+        </a>
+      )
+    },
+
+    img({ src, alt }) {
+      const lastSlash = filePath.lastIndexOf('/')
+      const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
+      const resolved = src?.startsWith('http') ? src : `file://${base}/${src}`
+      return <img src={resolved} alt={alt ?? ''} className="max-w-full rounded" />
+    }
+  }
 
   return (
-    <article className="prose max-w-none px-8 py-6 font-serif text-text leading-relaxed">
-      {element}
+    // font-sans = Geist (clean gothic) — dropped Literata per user request
+    <article className="prose max-w-none px-8 py-8 font-sans text-text leading-relaxed">
+      <ReactMarkdown
+        remarkPlugins={[remarkGfm]}
+        rehypePlugins={[rehypeRaw, rehypeSlug]}
+        components={components}
+      >
+        {content}
+      </ReactMarkdown>
     </article>
   )
 }

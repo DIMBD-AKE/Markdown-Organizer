@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useProjectStore } from './stores/projectStore'
 import { useUiStore } from './stores/uiStore'
 import { useFileTreeStore } from './stores/fileTreeStore'
@@ -12,6 +12,12 @@ import SearchPanel from './components/Search/SearchPanel'
 import SettingsPanel from './components/Settings/SettingsPanel'
 import DocumentViewer from './components/Viewer/DocumentViewer'
 import TocPanel from './components/TocPanel/TocPanel'
+import ResizeHandle from './components/ResizeHandle'
+
+const MIN_SIDE = 140
+const MAX_SIDE = 480
+const MIN_TOC  = 120
+const MAX_TOC  = 400
 
 export default function App() {
   const setProjects = useProjectStore((s) => s.setProjects)
@@ -19,18 +25,22 @@ export default function App() {
   const theme = useUiStore((s) => s.theme)
   const sidebarTab = useUiStore((s) => s.sidebarTab)
   const setTheme = useUiStore((s) => s.setTheme)
+  const fileTreeWidth = useUiStore((s) => s.fileTreeWidth)
+  const tocWidth = useUiStore((s) => s.tocWidth)
+  const setFileTreeWidth = useUiStore((s) => s.setFileTreeWidth)
+  const setTocWidth = useUiStore((s) => s.setTocWidth)
   const scrollRef = useRef<HTMLDivElement>(null)
   const { activeId, scrollToId } = useScrollSync(scrollRef)
   useFileWatcher()
 
+  // ---------- Init ----------
   useEffect(() => {
     window.api.getAppState().then(async (state) => {
       setProjects(state.projects)
-      setTheme(state.theme)
+      setTheme(state.theme as 'dark' | 'black' | 'latte')
 
       if (state.activeProjectId) {
         setActiveProject(state.activeProjectId)
-
         const ps = state.projectStates[state.activeProjectId]
         if (ps) {
           useFileTreeStore.getState().setExpandedDirs(ps.expandedDirs)
@@ -55,6 +65,15 @@ export default function App() {
       }
     })
 
+    // Restore panel widths
+    Promise.all([
+      window.api.getSetting('file_tree_width'),
+      window.api.getSetting('toc_width'),
+    ]).then(([ftw, tocw]) => {
+      if (ftw) setFileTreeWidth(Math.max(MIN_SIDE, Math.min(MAX_SIDE, Number(ftw))))
+      if (tocw) setTocWidth(Math.max(MIN_TOC, Math.min(MAX_TOC, Number(tocw))))
+    })
+
     const saveState = () => {
       const { activeProjectId } = useProjectStore.getState()
       if (!activeProjectId) return
@@ -68,34 +87,64 @@ export default function App() {
         searchHistory: []
       })
     }
-
     window.addEventListener('beforeunload', saveState)
     return () => window.removeEventListener('beforeunload', saveState)
-  }, [setProjects, setActiveProject, setTheme])
+  }, [setProjects, setActiveProject, setTheme, setFileTreeWidth, setTocWidth])
 
+  // ---------- Resize handlers ----------
+  const handleSideDelta = useCallback((delta: number) => {
+    const cur = useUiStore.getState().fileTreeWidth
+    useUiStore.getState().setFileTreeWidth(Math.max(MIN_SIDE, Math.min(MAX_SIDE, cur + delta)))
+  }, [])
+
+  const handleTocDelta = useCallback((delta: number) => {
+    const cur = useUiStore.getState().tocWidth
+    useUiStore.getState().setTocWidth(Math.max(MIN_TOC, Math.min(MAX_TOC, cur - delta)))
+  }, [])
+
+  const commitSideWidth = useCallback(() => {
+    window.api.setSetting('file_tree_width', String(useUiStore.getState().fileTreeWidth))
+  }, [])
+
+  const commitTocWidth = useCallback(() => {
+    window.api.setSetting('toc_width', String(useUiStore.getState().tocWidth))
+  }, [])
+
+  // ---------- Side panel routing ----------
   function renderSidePanel() {
-    if (sidebarTab === 'search') return <SearchPanel />
+    if (sidebarTab === 'search')   return <SearchPanel />
     if (sidebarTab === 'settings') return <SettingsPanel />
     return <FileTreePanel />
   }
 
   return (
     <div className={`theme-${theme} flex flex-col h-screen bg-base text-text select-none`}>
-      {/* Top title bar — full width drag region with project dropdown */}
       <TitleBar />
-
       <div className="flex flex-1 overflow-hidden">
-        {/* Left icon sidebar — files / search / settings tabs */}
         <Sidebar />
 
-        {/* Side panel — content based on active sidebar tab */}
-        {renderSidePanel()}
+        {/* Resizable side panel */}
+        <div
+          className="flex-shrink-0 flex overflow-hidden"
+          style={{ width: fileTreeWidth }}
+        >
+          {renderSidePanel()}
+        </div>
 
-        {/* Main document viewer */}
+        <ResizeHandle onDelta={handleSideDelta} onCommit={commitSideWidth} />
+
+        {/* Document viewer — takes remaining space */}
         <DocumentViewer scrollRef={scrollRef} />
 
-        {/* Table of contents */}
-        <TocPanel activeId={activeId} onSelect={scrollToId} />
+        <ResizeHandle onDelta={handleTocDelta} onCommit={commitTocWidth} />
+
+        {/* Resizable TOC */}
+        <div
+          className="flex-shrink-0 flex overflow-hidden"
+          style={{ width: tocWidth }}
+        >
+          <TocPanel activeId={activeId} onSelect={scrollToId} />
+        </div>
       </div>
     </div>
   )

@@ -33,7 +33,7 @@ export interface AppState {
   projects: Project[]
   activeProjectId: string | null
   projectStates: Record<string, ProjectState>
-  theme: 'dark' | 'black'
+  theme: 'dark' | 'black' | 'latte'
   windowBounds: { width: number; height: number; x: number; y: number } | null
 }
 

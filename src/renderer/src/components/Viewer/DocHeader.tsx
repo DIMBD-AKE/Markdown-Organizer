@@ -1,7 +1,16 @@
 import { useViewerStore } from '../../stores/viewerStore'
-import { getFreshness, getFreshnessColor, formatAge } from '../../utils/freshness'
+import { getFreshness, formatAge } from '../../utils/freshness'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
+import type { Freshness } from '../../types'
 import path from 'path'
+
+// Uses CSS-variable-backed Tailwind colors — switches correctly in all themes.
+// Latte: green=#40a02b, yellow=#df8e1d, red=#d20f39 (all high contrast on light bg)
+const BADGE: Record<Freshness, string> = {
+  fresh: 'text-green  border-green  bg-green/10',
+  warn:  'text-yellow border-yellow bg-yellow/10',
+  stale: 'text-red    border-red    bg-red/10',
+}
 
 export default function DocHeader() {
   const { filePath, history, historyIndex, goBack, goForward } = useViewerStore()
@@ -12,7 +21,6 @@ export default function DocHeader() {
   const fileName = path.basename(filePath)
   const modifiedAt = findModifiedAt(tree, filePath) ?? Date.now()
   const freshness = getFreshness(modifiedAt)
-  const color = getFreshnessColor(freshness)
 
   async function navigate(getPath: () => string | null) {
     const p = getPath()
@@ -23,26 +31,29 @@ export default function DocHeader() {
   }
 
   return (
-    <div className="flex items-center gap-2 px-4 py-2 border-b border-surface0 bg-mantle">
+    <div className="flex items-center gap-2 px-4 py-2 border-b border-surface0 bg-mantle flex-shrink-0">
       <button
         disabled={historyIndex <= 0}
         onClick={() => navigate(goBack)}
-        className="text-overlay0 hover:text-text disabled:opacity-30 text-sm px-1"
+        className="text-overlay0 hover:text-text disabled:opacity-30 text-sm px-1 transition-colors"
       >←</button>
       <button
         disabled={historyIndex >= history.length - 1}
         onClick={() => navigate(goForward)}
-        className="text-overlay0 hover:text-text disabled:opacity-30 text-sm px-1"
+        className="text-overlay0 hover:text-text disabled:opacity-30 text-sm px-1 transition-colors"
       >→</button>
       <span className="text-sm text-text font-medium truncate flex-1">{fileName}</span>
-      <span className="text-xs px-2 py-0.5 rounded-full border" style={{ color, borderColor: color }}>
+      <span className={`text-[10px] px-2 py-0.5 rounded-full border font-mono flex-shrink-0 ${BADGE[freshness]}`}>
         {formatAge(modifiedAt)}
       </span>
     </div>
   )
 }
 
-function findModifiedAt(node: import('../../types').FileNode | null, targetPath: string): number | undefined {
+function findModifiedAt(
+  node: import('../../types').FileNode | null,
+  targetPath: string
+): number | undefined {
   if (!node) return undefined
   if (node.path === targetPath) return node.modifiedAt
   for (const child of node.children ?? []) {
