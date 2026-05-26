@@ -28,7 +28,7 @@ export default function DocumentViewer({ scrollRef }: Props) {
         {error
           ? <div className="p-8 text-red text-sm">{error}</div>
           : content && (
-            <ErrorBoundary fallback={<div className="p-8 text-red text-sm">렌더링 오류</div>}>
+            <ErrorBoundary key={filePath} fallback={<div className="p-8 text-red text-sm">렌더링 오류</div>}>
               <MarkdownRenderer content={content} filePath={filePath} />
             </ErrorBoundary>
           )

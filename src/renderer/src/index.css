@@ -1,90 +1,125 @@
 @import "tailwindcss";
 @config "../../../tailwind.config.ts";
 
-/* ──────────────────────────────────────────────
-   CSS Variables — default to dark (Catppuccin Mocha)
-   Prevents flash of unstyled content before theme class renders.
-   ────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────
+   CSS Custom Properties
+   All Catppuccin tokens as CSS variables so every theme class
+   can override them — including text, mauve, blue, etc.
+   Default = Catppuccin Mocha (dark) to prevent FOUC.
+   ────────────────────────────────────────────────────────── */
 :root {
   color-scheme: dark;
-  /* Surface colors — overridden by .theme-* classes */
-  --color-base:        #1e1e2e;
-  --color-mantle:      #181825;
-  --color-crust:       #11111b;
-  --color-surface0:    #313244;
-  /* Accent — static across all themes */
-  --color-amber:       #f5c05a;
-  --color-amber-soft:  rgba(245, 192, 90, 0.10);
+  /* Surfaces */
+  --color-base:       #1e1e2e;
+  --color-mantle:     #181825;
+  --color-crust:      #11111b;
+  --color-surface0:   #313244;
+  --color-surface1:   #45475a;
+  --color-overlay0:   #6c7086;
+  /* Text */
+  --color-text:       #cdd6f4;
+  --color-subtext0:   #a6adc8;
+  /* Accents */
+  --color-lavender:   #b4befe;
+  --color-mauve:      #cba6f7;
+  --color-blue:       #89b4fa;
+  --color-green:      #a6e3a1;
+  --color-yellow:     #f9e2af;
+  --color-red:        #f38ba8;
+  --color-teal:       #94e2d5;
+  --color-amber:      #f5c05a;
+  --color-amber-soft: rgba(245, 192, 90, 0.10);
 }
 
-/* ──────────────────────────────────────────────
-   Theme classes — applied to root <div> via className={`theme-${theme}`}
-   ────────────────────────────────────────────── */
+/* ── Mocha (dark default) ────────────────────────────────── */
 .theme-dark {
   color-scheme: dark;
-  --color-base:     #1e1e2e;
-  --color-mantle:   #181825;
-  --color-crust:    #11111b;
-  --color-surface0: #313244;
+  --color-base:       #1e1e2e;
+  --color-mantle:     #181825;
+  --color-crust:      #11111b;
+  --color-surface0:   #313244;
+  --color-surface1:   #45475a;
+  --color-overlay0:   #6c7086;
+  --color-text:       #cdd6f4;
+  --color-subtext0:   #a6adc8;
+  --color-lavender:   #b4befe;
+  --color-mauve:      #cba6f7;
+  --color-blue:       #89b4fa;
+  --color-green:      #a6e3a1;
+  --color-yellow:     #f9e2af;
+  --color-red:        #f38ba8;
+  --color-teal:       #94e2d5;
+  --color-amber:      #f5c05a;
+  --color-amber-soft: rgba(245, 192, 90, 0.10);
 }
 
+/* ── Black (OLED) ────────────────────────────────────────── */
 .theme-black {
   color-scheme: dark;
-  --color-base:     #000000;
-  --color-mantle:   #0a0a0a;
-  --color-crust:    #000000;
-  --color-surface0: #1a1a1a;
+  --color-base:       #000000;
+  --color-mantle:     #0a0a0a;
+  --color-crust:      #000000;
+  --color-surface0:   #1a1a1a;
+  --color-surface1:   #2a2a2a;
+  --color-overlay0:   #6c7086;
+  --color-text:       #cdd6f4;
+  --color-subtext0:   #a6adc8;
+  --color-lavender:   #b4befe;
+  --color-mauve:      #cba6f7;
+  --color-blue:       #89b4fa;
+  --color-green:      #a6e3a1;
+  --color-yellow:     #f9e2af;
+  --color-red:        #f38ba8;
+  --color-teal:       #94e2d5;
+  --color-amber:      #f5c05a;
+  --color-amber-soft: rgba(245, 192, 90, 0.10);
 }
 
-/* Catppuccin Latte — light theme (DESIGN.md: RISK 3) */
+/* ── Latte (light) ───────────────────────────────────────── */
 .theme-latte {
   color-scheme: light;
-  --color-base:     #eff1f5;
-  --color-mantle:   #e6e9ef;
-  --color-crust:    #dce0e8;
-  --color-surface0: #ccd0da;
-  --color-amber:    #df8e1d;   /* Latte's "yellow" */
+  --color-base:       #eff1f5;
+  --color-mantle:     #e6e9ef;
+  --color-crust:      #dce0e8;
+  --color-surface0:   #ccd0da;
+  --color-surface1:   #bcc0cc;
+  --color-overlay0:   #9ca0b0;
+  --color-text:       #4c4f69;
+  --color-subtext0:   #6c6f85;
+  --color-lavender:   #7287fd;
+  --color-mauve:      #8839ef;
+  --color-blue:       #1e66f5;
+  --color-green:      #40a02b;
+  --color-yellow:     #df8e1d;
+  --color-red:        #d20f39;
+  --color-teal:       #179299;
+  --color-amber:      #df8e1d;
   --color-amber-soft: rgba(223, 142, 29, 0.10);
 }
 
-/* ──────────────────────────────────────────────
-   Prose (Literata) — custom Catppuccin token overrides
-   @tailwindcss/typography uses --tw-prose-* variables.
-   ────────────────────────────────────────────── */
+/* ──────────────────────────────────────────────────────────
+   Prose — typography token overrides
+   tailwind.config.ts sets these via var() in the typography
+   plugin config; this block adds explicit .prose overrides
+   as a fallback for Tailwind v4 @layer ordering edge cases.
+   Because all vars are now theme-sensitive, no per-theme
+   .prose block is needed.
+   ────────────────────────────────────────────────────────── */
 .prose {
-  --tw-prose-body:          #cdd6f4;
-  --tw-prose-headings:      #cdd6f4;
-  --tw-prose-lead:          #a6adc8;
-  --tw-prose-links:         #89b4fa;
-  --tw-prose-bold:          #cdd6f4;
-  --tw-prose-counters:      #a6adc8;
-  --tw-prose-bullets:       #6c7086;
-  --tw-prose-hr:            #313244;
-  --tw-prose-quotes:        #a6adc8;
-  --tw-prose-quote-borders: #313244;
-  --tw-prose-captions:      #a6adc8;
-  --tw-prose-code:          #cba6f7;
-  --tw-prose-pre-code:      #cdd6f4;
-  --tw-prose-pre-bg:        #181825;
-  --tw-prose-th-borders:    #313244;
-  --tw-prose-td-borders:    #313244;
-}
-
-/* Latte overrides for prose */
-.theme-latte .prose {
-  --tw-prose-body:          #4c4f69;
-  --tw-prose-headings:      #4c4f69;
-  --tw-prose-lead:          #6c6f85;
-  --tw-prose-links:         #1e66f5;
-  --tw-prose-bold:          #4c4f69;
-  --tw-prose-counters:      #6c6f85;
-  --tw-prose-bullets:       #9ca0b0;
-  --tw-prose-hr:            #ccd0da;
-  --tw-prose-quotes:        #6c6f85;
-  --tw-prose-quote-borders: #ccd0da;
-  --tw-prose-code:          #8839ef;
-  --tw-prose-pre-code:      #4c4f69;
-  --tw-prose-pre-bg:        #e6e9ef;
-  --tw-prose-th-borders:    #ccd0da;
-  --tw-prose-td-borders:    #ccd0da;
+  --tw-prose-body:          var(--color-text);
+  --tw-prose-headings:      var(--color-text);
+  --tw-prose-lead:          var(--color-subtext0);
+  --tw-prose-links:         var(--color-blue);
+  --tw-prose-bold:          var(--color-text);
+  --tw-prose-counters:      var(--color-subtext0);
+  --tw-prose-bullets:       var(--color-overlay0);
+  --tw-prose-hr:            var(--color-surface0);
+  --tw-prose-quotes:        var(--color-subtext0);
+  --tw-prose-quote-borders: var(--color-surface0);
+  --tw-prose-captions:      var(--color-subtext0);
+  --tw-prose-code:          var(--color-mauve);
+  --tw-prose-pre-code:      var(--color-text);
+  --tw-prose-pre-bg:        var(--color-mantle);
+  --tw-prose-th-borders:    var(--color-surface0);
+  --tw-prose-td-borders:    var(--color-surface0);
 }

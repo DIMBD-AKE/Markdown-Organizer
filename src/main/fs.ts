@@ -33,7 +33,10 @@ export function buildFileTree(dirPath: string): FileNode {
   const files = visible.filter((e) => !e.isDirectory() && e.name.endsWith('.md'))
 
   const children: FileNode[] = [
-    ...dirs.map((d) => buildFileTree(path.join(dirPath, d.name))),
+    // Only include dirs that contain at least one md file (recursively)
+    ...dirs
+      .map((d) => buildFileTree(path.join(dirPath, d.name)))
+      .filter((child) => !child.isDir || (child.mdCount ?? 0) > 0),
     ...files.map((f) => {
       const fp = path.join(dirPath, f.name)
       try {
