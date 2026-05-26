@@ -31,7 +31,7 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
       }
       // Inline code
       return (
-        <code className="bg-surface0 rounded px-1 py-0.5 text-[0.85em] font-mono text-mauve">
+        <code className="bg-surface0 rounded px-1 py-0.5 text-[0.85em] font-mono text-blue">
           {children}
         </code>
       )

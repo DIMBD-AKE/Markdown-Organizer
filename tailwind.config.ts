@@ -44,7 +44,7 @@ export default {
             '--tw-prose-quotes':        'var(--color-subtext0)',
             '--tw-prose-quote-borders': 'var(--color-surface0)',
             '--tw-prose-captions':      'var(--color-subtext0)',
-            '--tw-prose-code':          'var(--color-mauve)',
+            '--tw-prose-code':          'var(--color-blue)',
             '--tw-prose-pre-code':      'var(--color-text)',
             '--tw-prose-pre-bg':        'var(--color-mantle)',
             '--tw-prose-th-borders':    'var(--color-surface0)',
