@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
+import { useViewerStore } from '../../stores/viewerStore'
 import ThemeToggle from '../ThemeToggle'
 import type { ProjectType } from '../../types'
 
@@ -8,25 +9,28 @@ const dragStyle = { WebkitAppRegion: 'drag' } as React.CSSProperties
 const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
 const TYPE_LABEL: Partial<Record<ProjectType, string>> = {
-  unity:       'Unity',
-  unreal:      'Unreal',
-  node:        'Node',
-  rust:        'Rust',
-  python:      'Python',
+  unity:         'Unity',
+  unreal:        'Unreal',
+  node:          'Node',
+  rust:          'Rust',
+  python:        'Python',
   'ai-research': 'AI',
-  docs:        'Docs',
+  docs:          'Docs',
 }
 
 export default function TitleBar() {
-  const { projects, activeProjectId, setActiveProject, addProject } = useProjectStore()
+  const { projects, activeProjectId, setActiveProject, addProject, removeProject } = useProjectStore()
   const { setTree, setLoading } = useFileTreeStore()
   const [open, setOpen] = useState(false)
   const activeProject = projects.find((p) => p.id === activeProjectId)
   const activeTypeLabel = activeProject ? TYPE_LABEL[activeProject.type] : undefined
 
   async function selectProject(id: string, projPath: string) {
+    useViewerStore.getState().clearForProjectSwitch()
+    useFileTreeStore.getState().setSelectedFile(null)
     setActiveProject(id)
     window.api.setSetting('active_project_id', id)
+    window.api.startWatcher(projPath)
     setLoading(true)
     try {
       const tree = await window.api.getFileTree(projPath)
@@ -50,6 +54,31 @@ export default function TitleBar() {
     }
   }
 
+  async function handleDeleteProject(e: React.MouseEvent, id: string) {
+    e.stopPropagation()
+    await window.api.removeProject(id)
+    removeProject(id)
+
+    if (id === activeProjectId) {
+      useViewerStore.getState().clearForProjectSwitch()
+      useFileTreeStore.getState().setTree(null)
+      useFileTreeStore.getState().setSelectedFile(null)
+
+      const remaining = projects.filter((p) => p.id !== id)
+      if (remaining.length > 0) {
+        selectProject(remaining[0].id, remaining[0].path)
+      } else {
+        setActiveProject(null)
+        window.api.setSetting('active_project_id', '')
+        window.api.startWatcher('')
+      }
+    }
+  }
+
+  function handleOpenInFinder() {
+    if (activeProject) window.api.openPath(activeProject.path)
+  }
+
   return (
     <header
       style={dragStyle}
@@ -58,9 +87,8 @@ export default function TitleBar() {
       {/* Traffic light clearance (~80px) */}
       <div className="w-[80px] flex-shrink-0" />
 
-      {/* Project selector — button + type badge side by side */}
+      {/* Project selector */}
       <div style={noDragStyle} className="flex items-center gap-2">
-        {/* Clickable dropdown trigger */}
         <button
           onClick={() => setOpen((o) => !o)}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm transition-colors
@@ -78,25 +106,36 @@ export default function TitleBar() {
                 style={noDragStyle}
                 onClick={(e) => { e.stopPropagation(); setOpen(false) }}
               />
-              <div className="absolute top-full left-0 mt-1 z-50 min-w-[210px] overflow-hidden
+              <div className="absolute top-full left-0 mt-1 z-50 min-w-[220px] overflow-hidden
                 bg-mantle border border-surface0 rounded-lg shadow-xl">
                 {projects.map((p) => (
-                  <button
+                  <div
                     key={p.id}
-                    onClick={(e) => { e.stopPropagation(); selectProject(p.id, p.path); setOpen(false) }}
-                    className={`w-full text-left px-4 py-2 text-sm flex items-center gap-2 transition-colors
-                      ${p.id === activeProjectId
-                        ? 'text-amber bg-surface0/40'
-                        : 'text-text hover:bg-surface0/50'
-                      }`}
+                    className={`flex items-center group transition-colors
+                      ${p.id === activeProjectId ? 'bg-surface0/40' : 'hover:bg-surface0/50'}`}
                   >
-                    <span className="flex-1 truncate">{p.name}</span>
-                    {TYPE_LABEL[p.type] && (
-                      <span className="text-[10px] text-overlay0 font-mono bg-surface0 px-1.5 py-0.5 rounded flex-shrink-0">
-                        {TYPE_LABEL[p.type]}
-                      </span>
-                    )}
-                  </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); selectProject(p.id, p.path); setOpen(false) }}
+                      className={`flex-1 text-left px-4 py-2 text-sm flex items-center gap-2
+                        ${p.id === activeProjectId ? 'text-amber' : 'text-text'}`}
+                    >
+                      <span className="flex-1 truncate">{p.name}</span>
+                      {TYPE_LABEL[p.type] && (
+                        <span className="text-[10px] text-overlay0 font-mono bg-surface0 px-1.5 py-0.5 rounded flex-shrink-0">
+                          {TYPE_LABEL[p.type]}
+                        </span>
+                      )}
+                    </button>
+                    {/* Delete button — appears on hover */}
+                    <button
+                      onClick={(e) => handleDeleteProject(e, p.id)}
+                      title="프로젝트 삭제"
+                      className="pr-3 pl-1 py-2 opacity-0 group-hover:opacity-100 text-overlay0
+                        hover:text-red transition-all text-sm leading-none"
+                    >
+                      ×
+                    </button>
+                  </div>
                 ))}
                 {projects.length > 0 && <div className="border-t border-surface0" />}
                 <button
@@ -110,7 +149,6 @@ export default function TitleBar() {
           )}
         </button>
 
-        {/* Type badge — outside the button, in the no-drag zone */}
         {activeTypeLabel && (
           <span className="text-[10px] text-overlay0 font-mono bg-surface0 px-1.5 py-0.5 rounded flex-shrink-0">
             {activeTypeLabel}
@@ -120,7 +158,19 @@ export default function TitleBar() {
 
       <div className="flex-1" />
 
-      <div style={noDragStyle} className="flex items-center pr-3">
+      <div style={noDragStyle} className="flex items-center gap-1 pr-3">
+        {/* Open active project in Finder */}
+        {activeProject && (
+          <button
+            onClick={handleOpenInFinder}
+            title="Finder에서 열기"
+            className="p-1.5 rounded text-overlay0 hover:text-text hover:bg-surface0/60 transition-colors"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M1.5 4A1.5 1.5 0 013 2.5h2.5l1 1.5H11A1.5 1.5 0 0112.5 5.5v5A1.5 1.5 0 0111 12H3A1.5 1.5 0 011.5 10.5V4z" />
+            </svg>
+          </button>
+        )}
         <ThemeToggle />
       </div>
     </header>

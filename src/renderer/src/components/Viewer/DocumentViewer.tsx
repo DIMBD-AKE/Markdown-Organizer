@@ -7,10 +7,18 @@ import React, { useEffect } from 'react'
 interface Props { scrollRef: React.RefObject<HTMLDivElement | null> }
 
 export default function DocumentViewer({ scrollRef }: Props) {
-  const { filePath, content, error, scrollPos, setScrollPos } = useViewerStore()
+  // Use individual selectors — calling useViewerStore() with no selector subscribes
+  // to ALL state changes (including scrollPos every scroll event), causing a
+  // full re-render cascade into MarkdownRenderer → MermaidDiagram/CodeBlock → state reset.
+  const filePath = useViewerStore((s) => s.filePath)
+  const content = useViewerStore((s) => s.content)
+  const error = useViewerStore((s) => s.error)
+  const setScrollPos = useViewerStore((s) => s.setScrollPos)
 
   useEffect(() => {
-    if (scrollRef.current) scrollRef.current.scrollTop = scrollPos
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = useViewerStore.getState().scrollPos
+    }
   }, [filePath])
 
   function handleScroll(e: React.UIEvent<HTMLDivElement>) {
@@ -24,7 +32,7 @@ export default function DocumentViewer({ scrollRef }: Props) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       <DocHeader />
-      <div ref={scrollRef as React.RefObject<HTMLDivElement>} onScroll={handleScroll} className="flex-1 overflow-y-auto bg-base">
+      <div ref={scrollRef as React.RefObject<HTMLDivElement>} onScroll={handleScroll} className="flex-1 overflow-y-auto bg-base select-text">
         {error
           ? <div className="p-8 text-red text-sm">{error}</div>
           : content && (

@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef, useCallback } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import { useViewerStore } from '../../stores/viewerStore'
 import { flattenTree } from '../../utils/flattenTree'
@@ -28,6 +28,13 @@ export default function FileTree() {
     getScrollElement: () => parentRef.current,
     estimateSize: () => 28
   })
+
+  useEffect(() => {
+    if (!selectedFile) return
+    const idx = items.findIndex(({ node }) => node.path === selectedFile)
+    if (idx === -1) return
+    virtualizer.scrollToIndex(idx, { align: 'auto' })
+  }, [selectedFile]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleClick = useCallback(async (node: FileNode) => {
     if (node.isDir) {
@@ -79,7 +86,7 @@ export default function FileTree() {
               onClick={() => handleClick(node)}
             >
               {node.isDir && (
-                <span className="text-overlay0 w-3 text-center flex-shrink-0 text-[10px]">
+                <span className="text-overlay0 w-3 text-center flex-shrink-0 text-[13px]">
                   {expandedDirs.has(node.path) ? '▾' : '▸'}
                 </span>
               )}

@@ -5,6 +5,8 @@ let watcher: FSWatcher | null = null
 
 export function startWatcher(projectPath: string, win: BrowserWindow): void {
   stopWatcher()
+  if (!projectPath) return  // empty path = just stop, don't start new watcher
+
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
   watcher = chokidar.watch(projectPath, {

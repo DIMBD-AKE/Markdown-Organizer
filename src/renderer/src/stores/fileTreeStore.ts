@@ -10,6 +10,7 @@ interface FileTreeStore {
   setSelectedFile(path: string | null): void
   toggleDir(path: string): void
   setExpandedDirs(paths: string[]): void
+  expandDirs(paths: string[]): void
   setLoading(isLoading: boolean): void
 }
 
@@ -27,5 +28,11 @@ export const useFileTreeStore = create<FileTreeStore>((set) => ({
       return { expandedDirs: next }
     }),
   setExpandedDirs: (paths) => set({ expandedDirs: new Set(paths) }),
+  expandDirs: (paths) =>
+    set((s) => {
+      const next = new Set(s.expandedDirs)
+      paths.forEach((p) => next.add(p))
+      return { expandedDirs: next }
+    }),
   setLoading: (isLoading) => set({ isLoading })
 }))
