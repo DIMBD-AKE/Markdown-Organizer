@@ -1,158 +1,95 @@
 # Milestone 2: 버그 픽스 & 폴리시 (M2)
 
 **Branch:** `fix/m2-polish`
-**Created:** 2026-05-26
-**Status:** In Progress
+**Completed:** 2026-05-27 01:30
+**Status:** Completed
 
 ---
 
-## Context (Read This First)
+## Purpose
 
-M1 완료 후 상태:
-- 앱 실행 및 프로덕션 빌드 정상 (`npm run build` 통과)
-- TypeScript 타입 체크 통과 (`npx tsc --noEmit`)
-- SQLite vitest 5개 실패 — Electron Node ABI 불일치 (앱 동작 무관, 이 마일스톤에서 수정)
-- 3단 레이아웃, 테마, 파일 브라우저, Markdown 렌더링, 히스토리 내비게이션 모두 동작
-
-M2 목표: 렌더링 품질 개선, 코드 블록 기능 완성, 파일 트리 ↔ 뷰어 동기화.
-
-관련 LESSONS_LEARNED 항목:
-- Mermaid SVG React state 패턴 — 이미 M1에서 적용됨. M2에서는 초기화 최적화 및 edge case 검증.
-- Electron native 모듈 + vitest ABI — tests/unit/queries.test.ts, tests/integration/projects-ipc.test.ts 수정 대상.
+M1에서 미완성된 렌더링 품질, UX 동기화, 테스트 인프라 문제 해결. Mermaid/CodeBlock 안정화, 파일 트리 ↔ 뷰어 동기화, SQLite vitest 픽스, 프로젝트 관리 UI 추가.
 
 ---
 
-## Task Breakdown
+## What Was Built
 
-### Task 1: Mermaid 렌더링 안정화
+**렌더링 픽스:**
+- `DocumentViewer.tsx` — 개별 Zustand selector 사용 (전체 state 구독 제거 → scrollPos 리렌더 루프 차단)
+- `MarkdownRenderer.tsx` — `useMemo([filePath])`로 components 안정화 (ReactMarkdown 자식 언마운트 방지)
+- `MermaidDiagram.tsx` — appTheme 구독, 동적 theme 적용 (latte=default, 나머지=dark), `not-prose` 래퍼
+- `CodeBlock.tsx` — 언어 배지 헤더, 40줄 초과 접기/펼치기, `not-prose` (prose margin 차단)
+- `DocumentViewer.tsx` — scroll area에 `select-text` 추가 (App root `select-none` override)
 
-**목표:** 모든 다이어그램 타입 정상 렌더링, 빠른 초기 표시.
+**내비게이션 동기화:**
+- `DocHeader.tsx` — 뒤로/앞으로 후 `setSelectedFile` + `expandDirs(ancestorDirs)` 호출
+- `FileTree.tsx` — `selectedFile` 변경 시 `virtualizer.scrollToIndex` 자동 스크롤
+- `fileTreeStore.ts` — `expandDirs(paths)` 액션 추가 (기존 set에 더하기)
+- `viewerStore.ts` — `clearForProjectSwitch()` 추가 (뷰어+히스토리 전체 초기화)
 
-**Files to modify:**
-- `src/renderer/src/components/Viewer/MermaidDiagram.tsx`
+**프로젝트 관리 (TitleBar):**
+- 드롭다운 각 프로젝트 항목에 hover × 삭제 버튼
+- 헤더 우측 Finder 열기 버튼 (폴더 아이콘)
+- 프로젝트 전환 시 `startWatcher(newPath)` IPC 호출
 
-**구체적 문제:**
-1. `mermaid.initialize()`를 매 render effect마다 호출 중 → 비용 낭비. 모듈 레벨 once로 이동.
-2. 일부 다이어그램 타입(sequence, ER 등) 미렌더링 → securityLevel, theme 설정 검증
-3. 앱 전체 스크롤바 + 하단 빈 영역 → SVG `height` 속성이 뷰포트 초과 시 발생 가능. `[&_svg]:max-h-[60vh]` 클래스 추가 검토.
+**IPC 추가:**
+- `channels.ts` — `START_WATCHER`, `OPEN_PATH` 채널
+- `ipc/projects.ts` — `startWatcher` (chokidar 재시작), `openPath` (shell.openPath) 핸들러
+- `watcher.ts` — 빈 경로 가드 (stop-only 모드)
+- `preload/index.ts`, `api.d.ts` — `startWatcher`, `openPath` 노출
 
-**Implementation notes:**
-```ts
-// MermaidDiagram.tsx 상단에 once 초기화
-let initialized = false
-function ensureInit() {
-  if (initialized) return
-  initialized = true
-  mermaid.initialize({ startOnLoad: false, theme: 'dark', ... })
-}
-// effect 내부: ensureInit() 호출 후 render
-```
+**테스트 인프라:**
+- `tests/__mocks__/better-sqlite3.ts` — `node:sqlite` 기반 wrapper (createRequire 패턴)
+- `vitest.config.ts` — `resolve.alias` + `server.deps.external` 설정
+- **21/21 통과**
 
----
-
-### Task 2: 코드 블록 기능 완성
-
-**목표:** 복사 버튼, 언어 배지, 줄 번호, 긴 코드 접기.
-
-**Files to modify:**
-- `src/renderer/src/components/Viewer/CodeBlock.tsx`
-
-**현재 상태:** Shiki 문법 강조만 동작. UI 기능 없음.
-
-**Implementation notes:**
-```tsx
-// CodeBlock 구조
-<div className="relative group my-4 rounded-lg overflow-hidden">
-  {/* 상단 바 */}
-  <div className="flex items-center justify-between px-4 py-2 bg-mantle border-b border-surface0">
-    <span className="text-xs font-mono text-overlay0">{lang}</span>
-    <CopyButton code={code} />
-  </div>
-  {/* 코드 */}
-  <div className={collapsed ? 'max-h-64 overflow-hidden' : ''}>
-    {/* shiki output */}
-  </div>
-  {/* 접기 버튼 (40줄 이상일 때만) */}
-  {lineCount > 40 && <CollapseButton />}
-</div>
-```
-
-CopyButton: `navigator.clipboard.writeText(code)` → 1.5초 후 아이콘 리셋.
-줄 번호: Shiki `addClassToHast` 옵션 또는 CSS counter 활용.
+**개발 도구:**
+- `scripts/driver.mjs` — Playwright Electron REPL 드라이버
+- `scripts/test-render.mjs` — 렌더링 자동화 테스트 스크립트
 
 ---
 
-### Task 3: 파일 트리 ↔ 내비게이션 동기화
+## Key Decisions
 
-**목표:** 뒤로/앞으로 클릭 시 좌측 파일 트리가 해당 파일로 선택 + 스크롤.
-
-**Files to modify:**
-- `src/renderer/src/stores/viewerStore.ts` (filePath 변경 감지)
-- `src/renderer/src/stores/fileTreeStore.ts` (selectedFile setter)
-- `src/renderer/src/components/FileTree/FileTree.tsx` (selectedFile 기준 자동 스크롤)
-- `src/renderer/src/components/Viewer/DocHeader.tsx` (navigate 후 동기화 트리거)
-
-**Implementation notes:**
-DocHeader `navigate()` 함수에서 `loadFile` 호출 후 `useFileTreeStore.getState().setSelectedFile(p)` 추가.
-
-파일 트리 자동 스크롤: `selectedFile`이 변경될 때 해당 DOM 노드를 `scrollIntoView({ behavior: 'smooth', block: 'nearest' })`.
-트리가 접혀 있으면 상위 폴더 자동 펼침 필요 — `expandDir(ancestorPath)` 호출.
-
-**주의:** FileTree의 가상 스크롤이 있다면 `scrollIntoView`가 작동하지 않을 수 있음. 현재 구현 확인 후 대응.
+- **Zustand selector 분리**: `useViewerStore()` (no selector) 대신 개별 selector → scrollPos 구독 제거가 핵심
+- **useMemo for components**: ReactMarkdown의 `components` prop이 컴포넌트 타입 identity에 영향 — 렌더마다 새 함수 = 자식 언마운트
+- **node:sqlite via createRequire**: Vite 정적 분석이 `node:sqlite`를 해석 못함 → 런타임 dynamic require로 우회
+- **clearForProjectSwitch()**: 프로젝트 전환 시 히스토리/뷰어 전체 초기화 — 다른 프로젝트 경로가 뒤로가기에 남는 문제 방지
 
 ---
 
-### Task 4: SQLite vitest ABI 불일치 수정
+## Errors and Corrections
 
-**목표:** `npm test` 전체 통과.
+1. **scrollPos 구독 제거 첫 시도 실패** → `getState()`를 effect에서 썼지만 hook 호출 자체가 여전히 전체 구독. 사용자가 "스크롤마다 재렌더링 여전함" 지적 후 개별 selector 방식으로 재수정.
 
-**Files to modify:**
-- `vitest.config.ts`
-- `tests/unit/queries.test.ts`
-- `tests/integration/projects-ipc.test.ts`
+2. **Mermaid 무한 루프 + 하단 다이어그램 미렌더** → 위 scrollPos 버그 + useMemo 누락 복합. 사용자가 직접 증상 ("렌더 영역 가려지면 무한 반복", "최상단 제외 하단 렌더 안됨") 재보고.
 
-**옵션 A — mock 분리 (권장):**
-```ts
-// vitest.config.ts
-export default defineConfig({
-  test: {
-    server: { deps: { inline: ['better-sqlite3'] } }
-  }
-})
-```
-또는 better-sqlite3를 vi.mock()으로 처리 후 인메모리 구현.
+3. **`node:sqlite` Vite 정적 분석 에러** → `server.deps.external` 먼저 시도, 실패. `createRequire` 패턴으로 해결.
 
-**옵션 B — sql.js 대체:**
-테스트 환경에서만 `sql.js` (wasm, Node 버전 무관) 사용. 실제 앱은 better-sqlite3 유지.
+4. **`export =` + ESM import 혼용** → `ReferenceError: better_sqlite3_module`. `export default`로 변경.
 
-**옵션 C — 빌드 타겟 리빌드:**
-`npm rebuild better-sqlite3 --runtime=node --target=$(node -e "console.log(process.version)")`
-→ 앱 실행 깨질 수 있으므로 비권장.
+5. **`select-none` 전체 적용** → App root `select-none`이 document content에도 적용 ("스크린샷 느낌"). `select-text` override로 해결.
+
+6. **nested `<button>` 문제** → 프로젝트 row(button) 안에 delete(button) 배치 불가. row를 `<div>`+`<button>` 구조로 재작성.
 
 ---
 
-## Pre-implemented Items
+## Test Results
 
-없음. M1에서 M2 항목을 미리 구현한 것 없음.
-
----
-
-## Test Plan
-
-1. Mermaid: flowchart / sequence / ER / gantt / state — 각 타입 렌더 확인
-2. Mermaid: 스크롤 후 SVG 유지 확인, 앱 스크롤바 없음 확인
-3. CodeBlock: 복사 버튼 클릭 → 클립보드 확인, 아이콘 변경 1.5초 후 복구
-4. CodeBlock: 40줄 이상 코드 접기/펼치기
-5. 파일 클릭 → 뒤로 → 파일 트리 선택 동기화 확인
-6. 파일 트리에 없는 경로(내부 링크 이동) → 뒤로 → 트리 동기화 확인
-7. `npm test` 전체 통과 (21개 이상)
+21/21 통과. 기존 SQLite 5개 실패 → node:sqlite mock으로 전환 후 통과.
 
 ---
 
-## Gotchas
+## Session Continuity Note
 
-- **FileTree 가상 스크롤:** 현재 FileTree가 가상화되어 있다면 DOM 노드가 없어 `scrollIntoView` 실패. 먼저 FileTree.tsx에서 가상화 여부 확인.
-- **Mermaid initialize once:** module-level `initialized` flag는 dev HMR 시 리셋 안 됨. HMR 중 테마 변경이 반영 안 될 수 있음 — 개발 중엔 허용.
-- **CodeBlock Shiki async:** `codeToHtml`이 async. CodeBlock이 이미 Suspense/useEffect 패턴 쓰는지 확인 후 복사 버튼 레이어 추가.
-- **better-sqlite3 mock:** queries.ts의 함수들이 `db` 인스턴스를 외부에서 주입받는 구조면 mock이 쉬움. 현재 `src/main/db/index.ts`에서 singleton으로 export 중 — 테스트용 mock 주입 경로 필요.
-- LESSONS_LEARNED.md의 모든 항목 적용 확인 (특히 StrictMode useRef, 히스토리 분리).
+M2 완료. 앱 실행 및 빌드 정상. 21/21 테스트 통과.
+
+핵심 아키텍처 패턴 확립:
+- Zustand selector 분리 (전체 구독 금지)
+- ReactMarkdown components useMemo 필수
+- SQLite vitest = node:sqlite wrapper (createRequire)
+
+M3에서는 검색 기능 (Sidebar "검색" 탭) 구현. `docs/side-search.md`에 기능 명세 있음.
+`docs/project-detection-planning.md`에 프로젝트 자동 탐지 시스템 기획 있음 (M4 이후 고려).
+
+다음 세션 시작 전 필독: 이 work-log + `docs/work-logs/LESSONS_LEARNED.md`.

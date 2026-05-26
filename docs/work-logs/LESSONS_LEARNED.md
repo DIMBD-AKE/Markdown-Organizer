@@ -76,6 +76,65 @@ StrictMode dev 모드: mount → cleanup(`false`) → remount(body 없음 → `t
 
 ---
 
+## Zustand no-selector = 전체 state 구독 — 2026-05-27
+
+**Symptom:** 스크롤할 때마다 MermaidDiagram SVG 사라짐, CodeBlock collapsed 상태 리셋. 무한 재렌더 루프.
+
+**Root cause:**
+```ts
+const { filePath, content, error, scrollPos, setScrollPos } = useViewerStore()
+```
+selector 없이 `useViewerStore()` 호출 → 전체 state 구독 → `scrollPos` 변경(매 스크롤)마다 리렌더 → MarkdownRenderer → ReactMarkdown 자식 언마운트/리마운트 → state 초기화.
+
+**Failed attempts:** `getState()` 를 effect 내부에서 사용했지만 hook 호출 자체가 여전히 전체 구독 중.
+
+**Correct fix:** 모든 state 접근을 개별 selector로 분리:
+```ts
+const filePath = useViewerStore((s) => s.filePath)
+const setScrollPos = useViewerStore((s) => s.setScrollPos)
+// scrollPos: 구독 제거, effect에서 getState() 사용
+```
+
+---
+
+## ReactMarkdown components 참조 불안정 → 자식 언마운트 — 2026-05-27
+
+**Symptom:** 부모 리렌더 시 CodeBlock/MermaidDiagram state(collapsed, svg) 초기화.
+
+**Root cause:** `components` 객체를 render 함수 body에 직접 선언 → 매 렌더마다 새 함수 참조 → ReactMarkdown이 새 컴포넌트 타입으로 인식 → 언마운트+리마운트 → state 소멸.
+
+**Correct fix:** `useMemo<Components>(() => ({...}), [filePath])` 로 메모이제이션. `filePath`만 deps — `a`/`img` 핸들러에서 상대경로 해석에 사용.
+
+---
+
+## node:sqlite Vite 정적 분석 실패 — 2026-05-27
+
+**Symptom:** `import { DatabaseSync } from 'node:sqlite'` → `Error: Failed to load url sqlite`.
+
+**Root cause:** Vite가 `node:` prefix를 제거하고 node_modules에서 `sqlite`를 찾으려 함. `node:sqlite`는 실험적 내장 모듈이라 Vite의 Node builtin 인식 목록에 없음.
+
+**Failed attempts:** `server.deps.external: [/^node:/]` — 여전히 정적 import 분석 단계에서 실패.
+
+**Correct fix:** `createRequire`로 런타임에 동적 로드:
+```ts
+import { createRequire } from 'module'
+const _require = createRequire(import.meta.url)
+const { DatabaseSync } = _require('node:sqlite')
+```
+Vite 빌드 타임 분석 우회.
+
+---
+
+## ESM import + `export =` (CJS) 혼용 오류 — 2026-05-27
+
+**Symptom:** mock 파일에서 `ReferenceError: better_sqlite3_module is not defined`.
+
+**Root cause:** ESM `import` 문과 `export = Database` (CommonJS 스타일) 혼용 → esbuild 트랜스파일 실패.
+
+**Correct fix:** `export default Database` (순수 ESM). 테스트 코드의 `import Database from 'better-sqlite3'`는 default import이므로 호환.
+
+---
+
 ## Tailwind 하드코딩 hex vs CSS 변수 테마 — 2026-05-26
 
 **Symptom:** `bg-base` 등이 테마 전환 후에도 Mocha(dark) 색상 유지.
