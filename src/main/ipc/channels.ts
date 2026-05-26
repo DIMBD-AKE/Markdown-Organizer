@@ -12,4 +12,5 @@ export const IPC = {
   FILE_CHANGED:       'file-changed',
   START_WATCHER:      'start-watcher',
   OPEN_PATH:          'open-path',
+  SEARCH_FILES:       'search-files',
 } as const

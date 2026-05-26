@@ -45,3 +45,24 @@ export interface TocItem {
 }
 
 export type Freshness = 'fresh' | 'warn' | 'stale'
+
+export interface SearchQuery {
+  query: string
+  mode: 'string' | 'regex'
+  scope: 'current' | 'all'
+  projectPaths: string[]
+}
+
+export interface SearchMatch {
+  lineNumber: number
+  lineText: string
+  matchStart: number
+  matchEnd: number
+}
+
+export interface SearchResult {
+  filePath: string
+  fileName: string
+  matchCount: number
+  matches: SearchMatch[]
+}

@@ -1,4 +1,4 @@
-import type { Project, ProjectState, FileNode, AppState } from '../renderer/src/types'
+import type { Project, ProjectState, FileNode, AppState, SearchQuery, SearchResult } from '../renderer/src/types'
 
 declare global {
   interface Window {
@@ -18,6 +18,8 @@ declare global {
       onFileChanged(cb: (payload: { type: string; path: string }) => void): () => void
       startWatcher(projectPath: string): Promise<void>
       openPath(targetPath: string): Promise<void>
+
+      searchFiles(query: SearchQuery): Promise<{ results: SearchResult[]; error?: string }>
     }
   }
 }
