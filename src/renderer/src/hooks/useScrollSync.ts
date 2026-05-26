@@ -20,7 +20,9 @@ export function useScrollSync(contentRef: React.RefObject<HTMLElement | null>) {
 
     el.addEventListener('scroll', onScroll, { passive: true })
     return () => el.removeEventListener('scroll', onScroll)
-  }, [contentRef.current])
+  // contentRef is a stable ref object — empty deps is correct here
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function scrollToId(id: string) {
     const el = contentRef.current

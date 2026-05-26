@@ -1,16 +1,15 @@
+import GithubSlugger from 'github-slugger'
 import type { TocItem } from '../types'
 
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '-')
-}
-
 export function extractToc(markdown: string): TocItem[] {
+  const slugger = new GithubSlugger()
   const headingRe = /^(#{1,6})\s+(.+)$/gm
   const flat: { level: number; text: string; id: string }[] = []
   let match: RegExpExecArray | null
 
   while ((match = headingRe.exec(markdown)) !== null) {
-    flat.push({ level: match[1].length, text: match[2].trim(), id: slugify(match[2].trim()) })
+    const text = match[2].trim()
+    flat.push({ level: match[1].length, text, id: slugger.slug(text) })
   }
 
   if (flat.length === 0) return []
