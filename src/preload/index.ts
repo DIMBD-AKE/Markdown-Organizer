@@ -1,19 +1,21 @@
-import { contextBridge } from 'electron'
-import { electronAPI } from '@electron-toolkit/preload'
+import { contextBridge, ipcRenderer } from 'electron'
+import { IPC } from '../main/ipc/channels'
 
-// Use `contextBridge` APIs to expose Electron APIs to
-// renderer only if context isolation is enabled, otherwise
-// just add to the DOM global.
-if (process.contextIsolated) {
-  try {
-    contextBridge.exposeInMainWorld('electron', electronAPI)
-    contextBridge.exposeInMainWorld('api', {})
-  } catch (error) {
-    console.error(error)
+contextBridge.exposeInMainWorld('api', {
+  selectFolder: () => ipcRenderer.invoke(IPC.SELECT_FOLDER),
+  addProject: (folderPath: string) => ipcRenderer.invoke(IPC.ADD_PROJECT, folderPath),
+  removeProject: (id: string) => ipcRenderer.invoke(IPC.REMOVE_PROJECT, id),
+  saveProjectState: (state: unknown) => ipcRenderer.invoke(IPC.SAVE_PROJECT_STATE, state),
+
+  getFileTree: (dirPath: string) => ipcRenderer.invoke(IPC.GET_FILE_TREE, dirPath),
+  readFile: (filePath: string) => ipcRenderer.invoke(IPC.READ_FILE, filePath),
+  getAppState: () => ipcRenderer.invoke(IPC.GET_APP_STATE),
+
+  getSetting: (key: string) => ipcRenderer.invoke(IPC.GET_SETTING, key),
+  setSetting: (key: string, value: string) => ipcRenderer.invoke(IPC.SET_SETTING, key, value),
+
+  onFileChanged: (cb: (payload: { type: string; path: string }) => void) => {
+    ipcRenderer.on(IPC.FILE_CHANGED, (_e, payload) => cb(payload))
+    return () => ipcRenderer.removeAllListeners(IPC.FILE_CHANGED)
   }
-} else {
-  // @ts-ignore (define in dts)
-  window.electron = electronAPI
-  // @ts-ignore (define in dts)
-  window.api = {}
-}
+})

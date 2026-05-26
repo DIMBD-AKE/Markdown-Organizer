@@ -1,55 +1,69 @@
-import { app, shell, BrowserWindow } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { app, BrowserWindow, shell } from 'electron'
+import path from 'path'
+import { registerAllHandlers } from './ipc'
+import { getDb, closeDb } from './db'
+import { getSetting, setSetting, getAllProjects } from './db/queries'
+import { startWatcher, stopWatcher } from './watcher'
 
-function createWindow(): void {
-  const mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+function createWindow(): BrowserWindow {
+  const db = getDb()
+  const w = parseInt(getSetting(db, 'window_width') ?? '1280', 10)
+  const h = parseInt(getSetting(db, 'window_height') ?? '800', 10)
+
+  const win = new BrowserWindow({
+    width: w,
+    height: h,
     minWidth: 900,
     minHeight: 600,
-    show: false,
-    autoHideMenuBar: true,
+    titleBarStyle: 'hidden',
+    trafficLightPosition: { x: 12, y: 12 },
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false
     }
   })
 
-  mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+  win.on('resize', () => {
+    const [width, height] = win.getSize()
+    setSetting(db, 'window_width', String(width))
+    setSetting(db, 'window_height', String(height))
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
+  win.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
   })
 
-  // HMR for renderer based on electron-vite cli.
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (process.env['ELECTRON_RENDERER_URL']) {
+    win.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    win.loadFile(path.join(__dirname, '../renderer/index.html'))
   }
+
+  return win
 }
 
 app.whenReady().then(() => {
-  electronApp.setAppUserModelId('com.markdown-organizer.app')
+  registerAllHandlers()
+  const win = createWindow()
 
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
-  })
+  // Start watcher if there's an active project
+  const db = getDb()
+  const activeId = getSetting(db, 'active_project_id')
+  if (activeId) {
+    const projects = getAllProjects(db)
+    const active = projects.find((p) => p.id === activeId)
+    if (active) startWatcher(active.path, win)
+  }
 
-  createWindow()
-
-  app.on('activate', function () {
+  app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
   })
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
-  }
+  stopWatcher()
+  closeDb()
+  if (process.platform !== 'darwin') app.quit()
 })

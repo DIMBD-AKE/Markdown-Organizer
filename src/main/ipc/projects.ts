@@ -1,0 +1,39 @@
+import { ipcMain, dialog } from 'electron'
+import { randomUUID } from 'crypto'
+import path from 'path'
+import { IPC } from './channels'
+import { getDb } from '../db'
+import { upsertProject, deleteProject, upsertProjectState } from '../db/queries'
+import { analyzeDirectory } from '../analyzer'
+import type { Project, ProjectState } from '../../renderer/src/types'
+
+export function registerProjectHandlers(): void {
+  ipcMain.handle(IPC.SELECT_FOLDER, async () => {
+    const result = await dialog.showOpenDialog({ properties: ['openDirectory'] })
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle(IPC.ADD_PROJECT, async (_e, folderPath: string) => {
+    const db = getDb()
+    const { type, icon } = analyzeDirectory(folderPath)
+    const project: Project = {
+      id: randomUUID(),
+      name: path.basename(folderPath),
+      path: folderPath,
+      type,
+      icon,
+      lastOpened: Date.now(),
+      createdAt: Date.now()
+    }
+    upsertProject(db, project)
+    return project
+  })
+
+  ipcMain.handle(IPC.REMOVE_PROJECT, async (_e, id: string) => {
+    deleteProject(getDb(), id)
+  })
+
+  ipcMain.handle(IPC.SAVE_PROJECT_STATE, async (_e, state: ProjectState) => {
+    upsertProjectState(getDb(), state)
+  })
+}
