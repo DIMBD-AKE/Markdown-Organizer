@@ -1,13 +1,16 @@
 import { useEffect } from 'react'
 import { useProjectStore } from './stores/projectStore'
 import { useUiStore } from './stores/uiStore'
+import { useFileWatcher } from './hooks/useFileWatcher'
 import ActivityBar from './components/ActivityBar/ActivityBar'
 import FileTreePanel from './components/FileTree/FileTreePanel'
+import DocumentViewer from './components/Viewer/DocumentViewer'
 
 export default function App() {
   const setProjects = useProjectStore((s) => s.setProjects)
   const setActiveProject = useProjectStore((s) => s.setActiveProject)
   const setTheme = useUiStore((s) => s.setTheme)
+  useFileWatcher()
 
   useEffect(() => {
     window.api.getAppState().then((state) => {
@@ -22,9 +25,8 @@ export default function App() {
       <div className="flex flex-1 overflow-hidden">
         <ActivityBar />
         <FileTreePanel />
-        <div className="flex-1 flex items-center justify-center text-overlay0 text-sm">
-          파일을 선택하세요
-        </div>
+        <DocumentViewer />
+        {/* TocPanel — Task 11에서 추가 */}
       </div>
     </div>
   )
