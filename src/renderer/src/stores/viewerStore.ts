@@ -25,6 +25,8 @@ interface ViewerStore {
   navigateTo(path: string): void
   goBack(): string | null
   goForward(): string | null
+  /** Reset viewer state on project switch — stale history paths are meaningless in a different project. */
+  clearForProjectSwitch(): void
 }
 
 function truncateAndAppend(history: string[], index: number, path: string): string[] {
@@ -73,5 +75,8 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
     const newIndex = historyIndex + 1
     set({ historyIndex: newIndex })
     return history[newIndex]
-  }
+  },
+
+  clearForProjectSwitch: () =>
+    set({ filePath: null, content: null, toc: [], scrollPos: 0, history: [], historyIndex: -1, error: null }),
 }))

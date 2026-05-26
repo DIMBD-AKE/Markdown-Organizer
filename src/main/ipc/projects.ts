@@ -1,10 +1,11 @@
-import { ipcMain, dialog } from 'electron'
+import { ipcMain, dialog, shell, BrowserWindow } from 'electron'
 import { randomUUID } from 'crypto'
 import path from 'path'
 import { IPC } from './channels'
 import { getDb } from '../db'
 import { upsertProject, deleteProject, upsertProjectState } from '../db/queries'
 import { analyzeDirectory } from '../analyzer'
+import { startWatcher } from '../watcher'
 import type { Project, ProjectState } from '../../renderer/src/types'
 
 export function registerProjectHandlers(): void {
@@ -35,5 +36,14 @@ export function registerProjectHandlers(): void {
 
   ipcMain.handle(IPC.SAVE_PROJECT_STATE, async (_e, state: ProjectState) => {
     upsertProjectState(getDb(), state)
+  })
+
+  ipcMain.handle(IPC.START_WATCHER, (_e, projectPath: string) => {
+    const win = BrowserWindow.getAllWindows()[0]
+    if (win) startWatcher(projectPath, win)
+  })
+
+  ipcMain.handle(IPC.OPEN_PATH, async (_e, targetPath: string) => {
+    await shell.openPath(targetPath)
   })
 }

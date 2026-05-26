@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import ReactMarkdown from 'react-markdown'
 import type { Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -18,7 +18,11 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
     setToc(extractToc(content))
   }, [content, setToc])
 
-  const components: Components = {
+  // Memoize components so ReactMarkdown receives stable function references across
+  // re-renders. Without this, every parent re-render creates new component types →
+  // ReactMarkdown unmounts and remounts all code blocks → state (collapsed, svg) resets.
+  // Only re-create when filePath changes (a/img handlers resolve relative paths from it).
+  const components = useMemo<Components>(() => ({
     // Strip <pre> — CodeBlock/MermaidDiagram handle their own wrapper
     pre: ({ children }) => <>{children}</>,
 
@@ -29,7 +33,6 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
         if (match[1] === 'mermaid') return <MermaidDiagram chart={code} />
         return <CodeBlock code={code} lang={match[1]} />
       }
-      // Inline code
       return (
         <code className="bg-surface0 rounded px-1 py-0.5 text-[0.85em] font-mono text-blue">
           {children}
@@ -44,7 +47,6 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
           const lastSlash = filePath.lastIndexOf('/')
           const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
           const abs = href.startsWith('/') ? href : `${base}/${href}`
-          // setFile handles history — don't call navigateTo separately (would double-add)
           window.api.readFile(abs).then(({ content: c, error }) => {
             if (c) useViewerStore.getState().setFile(abs, c)
             else useViewerStore.getState().setError(error ?? '읽기 실패')
@@ -64,10 +66,9 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
       const resolved = src?.startsWith('http') ? src : `file://${base}/${src}`
       return <img src={resolved} alt={alt ?? ''} className="max-w-full rounded" />
     }
-  }
+  }), [filePath])
 
   return (
-    // font-sans = Geist (clean gothic) — dropped Literata per user request
     <article className="prose max-w-none px-8 py-8 font-sans text-text leading-relaxed">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}

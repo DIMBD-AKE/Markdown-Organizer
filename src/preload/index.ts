@@ -18,5 +18,8 @@ contextBridge.exposeInMainWorld('api', {
     const listener = (_e: Electron.IpcRendererEvent, payload: { type: string; path: string }) => cb(payload)
     ipcRenderer.on(IPC.FILE_CHANGED, listener)
     return () => ipcRenderer.removeListener(IPC.FILE_CHANGED, listener)
-  }
+  },
+
+  startWatcher: (projectPath: string) => ipcRenderer.invoke(IPC.START_WATCHER, projectPath),
+  openPath: (targetPath: string) => ipcRenderer.invoke(IPC.OPEN_PATH, targetPath),
 })

@@ -35,6 +35,9 @@ export default function DocHeader() {
       const { content, error } = await window.api.readFile(p)
       if (content) {
         useViewerStore.getState().loadFile(p, content)
+        const { tree, setSelectedFile, expandDirs } = useFileTreeStore.getState()
+        setSelectedFile(p)
+        if (tree) expandDirs(ancestorDirs(p, tree.path))
       } else {
         // On error the historyIndex was already moved — move it back to be safe
         useViewerStore.getState().setError(error ?? '읽기 실패')
@@ -66,6 +69,16 @@ export default function DocHeader() {
       </span>
     </div>
   )
+}
+
+function ancestorDirs(filePath: string, rootPath: string): string[] {
+  const dirs: string[] = []
+  let current = path.dirname(filePath)
+  while (current !== rootPath && current !== path.dirname(current)) {
+    dirs.push(current)
+    current = path.dirname(current)
+  }
+  return dirs
 }
 
 function findModifiedAt(

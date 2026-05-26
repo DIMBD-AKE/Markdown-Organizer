@@ -9,5 +9,7 @@ export const IPC = {
   GET_SETTING:        'get-setting',
   SET_SETTING:        'set-setting',
   SELECT_FOLDER:      'select-folder',
-  FILE_CHANGED:       'file-changed'
+  FILE_CHANGED:       'file-changed',
+  START_WATCHER:      'start-watcher',
+  OPEN_PATH:          'open-path',
 } as const
