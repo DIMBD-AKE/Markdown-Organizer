@@ -7,7 +7,7 @@ export default function StatusDot({ modifiedAt }: { modifiedAt: number }) {
     <span
       className="w-1.5 h-1.5 rounded-full inline-block flex-shrink-0"
       style={{ backgroundColor: color }}
-      title={`${freshness}`}
+      title={freshness}
     />
   )
 }

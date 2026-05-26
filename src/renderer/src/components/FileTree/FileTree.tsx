@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef } from 'react'
+import { useRef, useCallback } from 'react'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import { useViewerStore } from '../../stores/viewerStore'
 import { flattenTree } from '../../utils/flattenTree'
@@ -7,9 +7,18 @@ import StatusDot from './StatusDot'
 import type { FileNode } from '../../types'
 
 export default function FileTree() {
-  const { tree, expandedDirs, selectedFile, toggleDir, setSelectedFile } = useFileTreeStore()
-  const { setFile, setError } = useViewerStore()
+  const toggleDir = useFileTreeStore((s) => s.toggleDir)
+  const setSelectedFile = useFileTreeStore((s) => s.setSelectedFile)
+  const tree = useFileTreeStore((s) => s.tree)
+  const expandedDirs = useFileTreeStore((s) => s.expandedDirs)
+  const selectedFile = useFileTreeStore((s) => s.selectedFile)
+  const setFile = useViewerStore((s) => s.setFile)
+  const setError = useViewerStore((s) => s.setError)
   const parentRef = useRef<HTMLDivElement>(null)
+  const mountedRef = useRef(true)
+
+  // Track mounted state for async safety
+  useCallback(() => () => { mountedRef.current = false }, [])
 
   const items = tree ? flattenTree(tree.children ?? [], expandedDirs) : []
 
@@ -19,7 +28,7 @@ export default function FileTree() {
     estimateSize: () => 26
   })
 
-  async function handleClick(node: FileNode) {
+  const handleClick = useCallback(async (node: FileNode) => {
     if (node.isDir) {
       toggleDir(node.path)
       return
@@ -27,15 +36,17 @@ export default function FileTree() {
     setSelectedFile(node.path)
     try {
       const { content, error } = await window.api.readFile(node.path)
+      if (!mountedRef.current) return
       if (error || content === null) {
         setError(error ?? '파일을 읽을 수 없습니다')
         return
       }
       setFile(node.path, content)
     } catch (err) {
+      if (!mountedRef.current) return
       setError(err instanceof Error ? err.message : '파일을 읽을 수 없습니다')
     }
-  }
+  }, [toggleDir, setSelectedFile, setFile, setError])
 
   return (
     <div ref={parentRef} className="flex-1 overflow-y-auto">
