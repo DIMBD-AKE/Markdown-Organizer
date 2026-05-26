@@ -91,6 +91,19 @@ export default function App() {
     return () => window.removeEventListener('beforeunload', saveState)
   }, [setProjects, setActiveProject, setTheme, setFileTreeWidth, setTocWidth])
 
+  // ---------- Cmd+F / Ctrl+F shortcut ----------
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'f') {
+        e.preventDefault()
+        useUiStore.getState().setSidebarTab('search')
+        // SearchPanel auto-focuses its input when sidebarTab becomes 'search'
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
   // ---------- Resize handlers ----------
   const handleSideDelta = useCallback((delta: number) => {
     const cur = useUiStore.getState().fileTreeWidth
