@@ -24,4 +24,33 @@ contextBridge.exposeInMainWorld('api', {
   openPath: (targetPath: string) => ipcRenderer.invoke(IPC.OPEN_PATH, targetPath),
 
   searchFiles: (query: unknown) => ipcRenderer.invoke(IPC.SEARCH_FILES, query),
+
+  checkForUpdates: () => ipcRenderer.invoke(IPC.CHECK_FOR_UPDATES),
+  installUpdate: () => ipcRenderer.invoke(IPC.INSTALL_UPDATE),
+
+  onUpdateAvailable: (cb: (info: unknown) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, info: unknown) => cb(info)
+    ipcRenderer.on(IPC.UPDATE_AVAILABLE, listener)
+    return () => ipcRenderer.removeListener(IPC.UPDATE_AVAILABLE, listener)
+  },
+  onUpdateNotAvailable: (cb: () => void) => {
+    const listener = () => cb()
+    ipcRenderer.on(IPC.UPDATE_NOT_AVAILABLE, listener)
+    return () => ipcRenderer.removeListener(IPC.UPDATE_NOT_AVAILABLE, listener)
+  },
+  onUpdateProgress: (cb: (p: unknown) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, p: unknown) => cb(p)
+    ipcRenderer.on(IPC.UPDATE_PROGRESS, listener)
+    return () => ipcRenderer.removeListener(IPC.UPDATE_PROGRESS, listener)
+  },
+  onUpdateDownloaded: (cb: () => void) => {
+    const listener = () => cb()
+    ipcRenderer.on(IPC.UPDATE_DOWNLOADED, listener)
+    return () => ipcRenderer.removeListener(IPC.UPDATE_DOWNLOADED, listener)
+  },
+  onUpdateError: (cb: (msg: string) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, msg: string) => cb(msg)
+    ipcRenderer.on(IPC.UPDATE_ERROR, listener)
+    return () => ipcRenderer.removeListener(IPC.UPDATE_ERROR, listener)
+  },
 })

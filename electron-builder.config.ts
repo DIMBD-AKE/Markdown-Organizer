@@ -3,10 +3,51 @@ import { defineConfig } from 'electron-builder'
 export default defineConfig({
   appId: 'com.markdown-organizer.app',
   productName: 'Markdown Organizer',
-  directories: { buildResources: 'build' },
+  copyright: `Copyright © ${new Date().getFullYear()} 이드림`,
+  directories: { buildResources: 'build', output: 'dist' },
   files: ['out/**'],
   asarUnpack: ['**/node_modules/better-sqlite3/**/*', '**/node_modules/bindings/**/*'],
-  mac: { target: [{ target: 'dmg', arch: ['x64', 'arm64'] }] },
-  win: { target: [{ target: 'nsis', arch: ['x64'] }] },
-  linux: { target: ['AppImage', 'deb'] }
+
+  publish: {
+    provider: 'github',
+    owner: 'DIMBD-AKE',
+    repo: 'Markdown-Organizer',
+  },
+
+  mac: {
+    target: [{ target: 'dmg', arch: ['x64', 'arm64'] }],
+    icon: 'build/icon.png',
+    category: 'public.app-category.productivity',
+    darkModeSupport: true,
+  },
+  dmg: {
+    title: 'Markdown Organizer',
+    contents: [
+      { x: 130, y: 220, type: 'file' },
+      { x: 410, y: 220, type: 'link', path: '/Applications' },
+    ],
+  },
+
+  win: {
+    target: [{ target: 'nsis', arch: ['x64'] }],
+    icon: 'build/icon.png',
+  },
+  nsis: {
+    oneClick: false,
+    perMachine: false,
+    allowToChangeInstallationDirectory: true,
+    createDesktopShortcut: true,
+    createStartMenuShortcut: true,
+  },
+
+  linux: {
+    target: ['AppImage', 'deb'],
+    icon: 'build/icon.png',
+    category: 'Office',
+    description: 'Desktop app for managing AI-generated Markdown documents',
+    executableName: 'markdown-organizer',
+  },
+  deb: {
+    depends: ['libgtk-3-0', 'libnotify4', 'libnss3', 'libxss1', 'libxtst6', 'xdg-utils', 'libatspi2.0-0', 'libdrm2', 'libgbm1'],
+  },
 })
