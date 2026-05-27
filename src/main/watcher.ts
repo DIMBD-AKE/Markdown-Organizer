@@ -12,7 +12,8 @@ export function startWatcher(projectPath: string, win: BrowserWindow): void {
   watcher = chokidar.watch(projectPath, {
     ignored: /(^|[/\\])\../,   // skip hidden files
     ignoreInitial: true,
-    depth: 10
+    depth: 5,
+    awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 },
   })
 
   const emit = (type: 'add' | 'change' | 'unlink', filePath: string) => {

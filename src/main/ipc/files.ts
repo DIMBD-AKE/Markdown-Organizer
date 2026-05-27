@@ -14,7 +14,8 @@ export function registerFileHandlers(): void {
 
   ipcMain.handle(IPC.READ_FILE, async (_e, filePath: string) => {
     try {
-      return { content: fs.readFileSync(filePath, 'utf-8'), error: null }
+      const content = await fs.promises.readFile(filePath, 'utf-8')
+      return { content, error: null }
     } catch (err: unknown) {
       return { content: null, error: (err as Error).message }
     }

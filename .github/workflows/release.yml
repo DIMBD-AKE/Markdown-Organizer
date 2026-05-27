@@ -43,7 +43,5 @@ jobs:
         run: npm run ${{ matrix.build_cmd }} -- --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Code signing — omit vars entirely when secrets are not configured;
-          # passing empty strings causes electron-builder to fail.
-          # Set these secrets in repo settings to enable signed builds.
+          # No Apple Developer ID — ad-hoc signing applied via afterPack hook.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'

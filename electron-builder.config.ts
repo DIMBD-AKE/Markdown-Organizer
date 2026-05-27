@@ -1,4 +1,5 @@
 import { defineConfig } from 'electron-builder'
+import { execSync } from 'child_process'
 
 export default defineConfig({
   appId: 'com.markdown-organizer.app',
@@ -7,6 +8,18 @@ export default defineConfig({
   directories: { buildResources: 'build', output: 'dist' },
   files: ['out/**'],
   asarUnpack: ['**/node_modules/better-sqlite3/**/*', '**/node_modules/bindings/**/*'],
+
+  // Ad-hoc sign on macOS so Gatekeeper doesn't block with "damaged app" on arm64.
+  // Runs after pack, before DMG creation. No Apple Developer ID required.
+  afterPack: async (context) => {
+    if (context.electronPlatformName !== 'darwin') return
+    const appPath = `${context.appOutDir}/${context.packager.appInfo.productFilename}.app`
+    try {
+      execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' })
+    } catch {
+      console.warn('[afterPack] Ad-hoc signing failed — continuing without signature')
+    }
+  },
 
   publish: {
     provider: 'github',
@@ -29,7 +42,10 @@ export default defineConfig({
   },
 
   win: {
-    target: [{ target: 'nsis', arch: ['x64'] }],
+    target: [
+      { target: 'nsis', arch: ['x64'] },
+      { target: 'portable', arch: ['x64'] },
+    ],
     icon: 'build/icon.png',
   },
   nsis: {

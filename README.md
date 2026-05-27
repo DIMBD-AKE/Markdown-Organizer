@@ -119,10 +119,10 @@ npm run dev
 # macOS (DMG)
 npm run build:mac
 
-# Windows (NSIS 인스톨러)
+# Windows (NSIS 인스톨러 + Portable exe)
 npm run build:win
 
-# Linux (AppImage + deb)
+# Linux (AppImage)
 npm run build:linux
 ```
 
@@ -146,6 +146,6 @@ git push origin v1.0.0
 | 플랫폼 | 형식 | 아키텍처 |
 |--------|------|----------|
 | macOS | DMG | x64, arm64 |
-| Windows | NSIS 인스톨러 | x64, arm64 |
-| Linux | AppImage, .deb | x64 |
+| Windows | NSIS 인스톨러, Portable exe | x64 |
+| Linux | AppImage | x64 |
 

@@ -20,7 +20,15 @@ export function setupAutoUpdater(win: BrowserWindow): void {
     win.webContents.send(IPC.UPDATE_DOWNLOADED)
   })
   autoUpdater.on('error', (err) => {
-    win.webContents.send(IPC.UPDATE_ERROR, err.message)
+    // Private repo → GitHub returns 404/401 for latest.yml without auth token.
+    // Treat these as "no update available" rather than a user-visible error.
+    const msg = err.message ?? ''
+    const isAuthError = /404|401|HttpError|net::ERR_/i.test(msg)
+    if (isAuthError) {
+      win.webContents.send(IPC.UPDATE_NOT_AVAILABLE)
+    } else {
+      win.webContents.send(IPC.UPDATE_ERROR, msg)
+    }
   })
 
   setTimeout(() => autoUpdater.checkForUpdates(), 5000)
