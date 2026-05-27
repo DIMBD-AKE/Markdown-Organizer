@@ -7,9 +7,9 @@ export interface ParsedDependencies {
   fields: Record<string, unknown>
 }
 
-export function parsePackageJson(rootPath: string): ParsedDependencies | null {
+export async function parsePackageJson(rootPath: string): Promise<ParsedDependencies | null> {
   try {
-    const raw = JSON.parse(fs.readFileSync(path.join(rootPath, 'package.json'), 'utf-8'))
+    const raw = JSON.parse(await fs.promises.readFile(path.join(rootPath, 'package.json'), 'utf-8'))
     const deps = { ...(raw.dependencies ?? {}), ...(raw.devDependencies ?? {}) }
     return { all: Object.keys(deps), raw: deps, fields: raw }
   } catch {
@@ -17,9 +17,9 @@ export function parsePackageJson(rootPath: string): ParsedDependencies | null {
   }
 }
 
-export function parseRequirementsTxt(rootPath: string): string[] | null {
+export async function parseRequirementsTxt(rootPath: string): Promise<string[] | null> {
   try {
-    const text = fs.readFileSync(path.join(rootPath, 'requirements.txt'), 'utf-8')
+    const text = await fs.promises.readFile(path.join(rootPath, 'requirements.txt'), 'utf-8')
     return text
       .split('\n')
       .map((line) => line.trim())
@@ -31,9 +31,9 @@ export function parseRequirementsTxt(rootPath: string): string[] | null {
   }
 }
 
-export function parsePyprojectToml(rootPath: string): string[] | null {
+export async function parsePyprojectToml(rootPath: string): Promise<string[] | null> {
   try {
-    const text = fs.readFileSync(path.join(rootPath, 'pyproject.toml'), 'utf-8')
+    const text = await fs.promises.readFile(path.join(rootPath, 'pyproject.toml'), 'utf-8')
     const deps: string[] = []
     let inDepsSection = false
     for (const line of text.split('\n')) {
@@ -56,9 +56,9 @@ export function parsePyprojectToml(rootPath: string): string[] | null {
   }
 }
 
-export function parseCargoToml(rootPath: string): string[] | null {
+export async function parseCargoToml(rootPath: string): Promise<string[] | null> {
   try {
-    const text = fs.readFileSync(path.join(rootPath, 'Cargo.toml'), 'utf-8')
+    const text = await fs.promises.readFile(path.join(rootPath, 'Cargo.toml'), 'utf-8')
     const deps: string[] = []
     let inDepsSection = false
     for (const line of text.split('\n')) {
@@ -81,11 +81,12 @@ export function parseCargoToml(rootPath: string): string[] | null {
   }
 }
 
-export function parseCsproj(rootPath: string): string[] | null {
+export async function parseCsproj(rootPath: string): Promise<string[] | null> {
   try {
-    const csprojFile = fs.readdirSync(rootPath).find((f) => f.endsWith('.csproj'))
+    const entries = await fs.promises.readdir(rootPath)
+    const csprojFile = entries.find((f) => f.endsWith('.csproj'))
     if (!csprojFile) return null
-    const text = fs.readFileSync(path.join(rootPath, csprojFile), 'utf-8')
+    const text = await fs.promises.readFile(path.join(rootPath, csprojFile), 'utf-8')
     const matches = [...text.matchAll(/PackageReference\s+Include="([^"]+)"/g)]
     return matches.map((m) => m[1].toLowerCase())
   } catch {

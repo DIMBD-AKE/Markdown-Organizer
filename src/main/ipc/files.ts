@@ -24,14 +24,16 @@ export function registerFileHandlers(): void {
   ipcMain.handle(IPC.GET_APP_STATE, async (): Promise<AppState> => {
     const db = getDb()
     const rawProjects = getAllProjects(db)
-    const projects = rawProjects.map((p) => {
-      try {
-        const result = analyzeDirectory(p.path)
-        return { ...p, icon: result.icon, frameworks: result.frameworks, confidence: result.confidence }
-      } catch {
-        return p
-      }
-    })
+    const projects = await Promise.all(
+      rawProjects.map(async (p) => {
+        try {
+          const result = await analyzeDirectory(p.path)
+          return { ...p, icon: result.icon, frameworks: result.frameworks, confidence: result.confidence }
+        } catch {
+          return p
+        }
+      })
+    )
     const activeProjectId = getSetting(db, 'active_project_id')
     const projectStates: AppState['projectStates'] = {}
     for (const p of projects) {

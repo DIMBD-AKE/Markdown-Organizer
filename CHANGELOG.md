@@ -2,6 +2,16 @@
 
 All notable changes to Markdown Organizer are documented here.
 
+## [1.1.2] — 2026-05-28
+
+### Fixed
+- **뷰어 이미지 렌더링** — CSP `img-src`에 `file:` 누락으로 로컬 이미지(`![]`) 전부 차단되던 문제 수정.
+- **Windows 이미지 경로** — `filePath.lastIndexOf('/')` 가 Windows 백슬래시 경로에서 -1 반환하여 잘못된 `file://` URL 생성하던 문제 수정. 백슬래시를 슬래시로 정규화 후 처리.
+- **Windows 렉 (근본 원인 제거)** — `analyzeDirectory` 전체 (`detector/index.ts`, `ruleEngine.ts`, `dependencyAnalyzer.ts`)를 `fs.promises` 비동기로 재작성. 앱 시작 시 main 프로세스 이벤트 루프를 수십~수백 ms 블로킹하던 문제 해소.
+- **macOS 코드사인 오류** — `electron-builder.config.ts`에 `mac.identity: null` 추가로 keychain 실제 인증서 자동 사용 차단. `afterPack` ad-hoc 서명만 남김. `--deep` 플래그 제거로 `locale.pak` 권한 오류 방지.
+- **Windows 포터블 빌드** — NSIS 설치파일 타겟 제거, `portable` 단독 빌드. 릴리즈에 설치 없이 바로 실행 가능한 단일 exe만 업로드.
+- **Windows 아이콘** — `build/icon.ico` 사용으로 전환. PNG → ICO 변환 없이 네이티브 윈도우 아이콘 표시.
+
 ## [1.1.1] — 2026-05-27
 
 ### Fixed

@@ -16,7 +16,7 @@ export default defineConfig({
     if (context.electronPlatformName !== 'darwin') return
     const appPath = `${context.appOutDir}/${context.packager.appInfo.productFilename}.app`
     console.log(`[afterPack] ad-hoc signing: ${appPath}`)
-    const result = spawnSync('codesign', ['--force', '--deep', '--sign', '-', appPath], {
+    const result = spawnSync('codesign', ['--force', '--sign', '-', appPath], {
       stdio: 'inherit',
     })
     if (result.status !== 0) {
@@ -35,6 +35,7 @@ export default defineConfig({
     icon: 'build/icon.png',
     category: 'public.app-category.productivity',
     darkModeSupport: true,
+    identity: null,
   },
   dmg: {
     title: 'Markdown Organizer',
@@ -45,18 +46,8 @@ export default defineConfig({
   },
 
   win: {
-    target: [
-      { target: 'nsis', arch: ['x64'] },
-      { target: 'portable', arch: ['x64'] },
-    ],
-    icon: 'build/icon.png',
-  },
-  nsis: {
-    oneClick: false,
-    perMachine: false,
-    allowToChangeInstallationDirectory: true,
-    createDesktopShortcut: true,
-    createStartMenuShortcut: true,
+    target: [{ target: 'portable', arch: ['x64'] }],
+    icon: 'build/icon.ico',
   },
 
   linux: {

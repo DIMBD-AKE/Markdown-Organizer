@@ -12,36 +12,42 @@ import { evaluateRules } from './ruleEngine'
 import { resolve } from './confidenceResolver'
 import type { DetectionResult } from '../../renderer/src/types'
 
-// Shallow-scan these common source dirs to improve glob detection
 const SHALLOW_SCAN_DIRS = ['src', 'lib', 'app', 'cmd', 'internal']
 
-export function analyzeDirectory(dirPath: string): DetectionResult {
+export async function analyzeDirectory(dirPath: string): Promise<DetectionResult> {
   let rootEntries: string[] = []
   try {
-    rootEntries = fs.readdirSync(dirPath)
+    rootEntries = await fs.promises.readdir(dirPath)
   } catch {
     return fallbackResult()
   }
 
-  // Collect shallow entries from common source subdirs
   const subEntries: string[] = []
-  for (const dir of SHALLOW_SCAN_DIRS) {
-    if (rootEntries.includes(dir)) {
-      try {
-        fs.readdirSync(path.join(dirPath, dir)).forEach((e) => subEntries.push(`${dir}/${e}`))
-      } catch { /* empty */ }
-    }
-  }
+  await Promise.all(
+    SHALLOW_SCAN_DIRS
+      .filter((dir) => rootEntries.includes(dir))
+      .map(async (dir) => {
+        try {
+          const entries = await fs.promises.readdir(path.join(dirPath, dir))
+          entries.forEach((e) => subEntries.push(`${dir}/${e}`))
+        } catch { /* skip */ }
+      })
+  )
 
-  const deps = parsePackageJson(dirPath)
+  const [deps, reqDeps, pyprojectDeps, cargoDeps, csprojDeps] = await Promise.all([
+    parsePackageJson(dirPath),
+    parseRequirementsTxt(dirPath),
+    parsePyprojectToml(dirPath),
+    parseCargoToml(dirPath),
+    parseCsproj(dirPath),
+  ])
+
   const pythonDeps = [
-    ...(parseRequirementsTxt(dirPath) ?? []),
-    ...(parsePyprojectToml(dirPath) ?? []),
+    ...(reqDeps ?? []),
+    ...(pyprojectDeps ?? []),
   ]
-  const cargoDeps = parseCargoToml(dirPath)
-  const csprojDeps = parseCsproj(dirPath)
 
-  const ruleScores = evaluateRules(
+  const ruleScores = await evaluateRules(
     dirPath,
     rootEntries,
     subEntries,

@@ -16,7 +16,7 @@ export function registerProjectHandlers(): void {
 
   ipcMain.handle(IPC.ADD_PROJECT, async (_e, folderPath: string) => {
     const db = getDb()
-    const result = analyzeDirectory(folderPath)
+    const result = await analyzeDirectory(folderPath)
     const project: Project = {
       id: randomUUID(),
       name: path.basename(folderPath),

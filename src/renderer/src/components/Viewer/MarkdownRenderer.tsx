@@ -189,8 +189,8 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
       const handleClick = (e: React.MouseEvent) => {
         if (href?.endsWith('.md')) {
           e.preventDefault()
-          const lastSlash = filePath.lastIndexOf('/')
-          const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
+          const normPath = filePath.replace(/\\/g, '/')
+          const base = normPath.substring(0, normPath.lastIndexOf('/'))
           const abs = href.startsWith('/') ? href : `${base}/${href}`
           window.api.readFile(abs).then(({ content: c, error }) => {
             if (c) useViewerStore.getState().setFile(abs, c)
@@ -206,9 +206,14 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
     },
 
     img({ src, alt }) {
-      const lastSlash = filePath.lastIndexOf('/')
-      const base = lastSlash >= 0 ? filePath.substring(0, lastSlash) : ''
-      const resolved = src?.startsWith('http') ? src : `file://${base}/${src}`
+      if (src?.startsWith('http')) {
+        return <img src={src} alt={alt ?? ''} className="max-w-full rounded" />
+      }
+      const normPath = filePath.replace(/\\/g, '/')
+      const base = normPath.substring(0, normPath.lastIndexOf('/'))
+      // Ensure three slashes for both Unix (/path) and Windows (C:/path)
+      const absBase = base.startsWith('/') ? base : `/${base}`
+      const resolved = `file://${absBase}/${src ?? ''}`
       return <img src={resolved} alt={alt ?? ''} className="max-w-full rounded" />
     }
   }), [filePath])

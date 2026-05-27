@@ -4,22 +4,22 @@ import type { DetectionRule, RuleCheck } from './rules'
 import type { ParsedDependencies } from './dependencyAnalyzer'
 import type { ProjectEvidence } from '../../renderer/src/types'
 
-export function evaluateRules(
+export async function evaluateRules(
   rootPath: string,
   rootEntries: string[],
-  subEntries: string[],  // shallow entries from src/, lib/, app/, cmd/, etc.
+  subEntries: string[],
   deps: ParsedDependencies | null,
   pythonDeps: string[] | null,
   cargoDeps: string[] | null,
   csprojDeps: string[] | null,
   rules: DetectionRule[]
-): Array<{ rule: DetectionRule; score: number; evidence: ProjectEvidence[] }> {
-  return rules
-    .map((rule) => {
+): Promise<Array<{ rule: DetectionRule; score: number; evidence: ProjectEvidence[] }>> {
+  const results = await Promise.all(
+    rules.map(async (rule) => {
       let score = 0
       const evidence: ProjectEvidence[] = []
       for (const check of rule.checks) {
-        const matched = evalCheck(check, rootPath, rootEntries, subEntries, deps, pythonDeps, cargoDeps, csprojDeps)
+        const matched = await evalCheck(check, rootPath, rootEntries, subEntries, deps, pythonDeps, cargoDeps, csprojDeps)
         if (matched !== null) {
           score += check.score
           evidence.push({ rule: `${rule.id}:${check.type}`, path: matched, score: check.score })
@@ -27,10 +27,11 @@ export function evaluateRules(
       }
       return { rule, score, evidence }
     })
-    .filter((r) => r.score > 0)
+  )
+  return results.filter((r) => r.score > 0)
 }
 
-function evalCheck(
+async function evalCheck(
   check: RuleCheck,
   rootPath: string,
   rootEntries: string[],
@@ -39,24 +40,22 @@ function evalCheck(
   pythonDeps: string[] | null,
   cargoDeps: string[] | null,
   csprojDeps: string[] | null
-): string | null {
+): Promise<string | null> {
   switch (check.type) {
     case 'pathExists': {
-      // Fast path for root-level (no slash)
       if (!check.path.includes('/') && rootEntries.includes(check.path)) return check.path
       try {
-        if (fs.existsSync(path.join(rootPath, check.path))) return check.path
-      } catch { /* empty */ }
-      return null
+        await fs.promises.access(path.join(rootPath, check.path))
+        return check.path
+      } catch { return null }
     }
 
     case 'fileExists': {
       try {
         const full = path.join(rootPath, check.path)
-        const stat = fs.statSync(full)
-        if (stat.isFile()) return check.path
-      } catch { /* empty */ }
-      return null
+        const stat = await fs.promises.stat(full)
+        return stat.isFile() ? check.path : null
+      } catch { return null }
     }
 
     case 'globExists': {
@@ -64,18 +63,15 @@ function evalCheck(
       const all = [...rootEntries, ...subEntries]
 
       if (pat.startsWith('*.')) {
-        // Extension match: *.tsx → all entries ending with .tsx
         const ext = pat.slice(1)
         return all.find((e) => e.endsWith(ext)) ?? null
       }
 
       if (pat.endsWith('.*')) {
-        // Prefix match: vite.config.* → root entries starting with 'vite.config.'
         const prefix = pat.slice(0, -1)
         return rootEntries.find((e) => e.startsWith(prefix)) ?? null
       }
 
-      // Generic regex — root entries only
       const re = new RegExp(
         '^' + pat.replace(/\./g, '\\.').replace(/\*/g, '.*').replace(/\?/g, '.') + '$'
       )
