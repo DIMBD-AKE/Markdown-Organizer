@@ -2,10 +2,15 @@
 
 All notable changes to Markdown Organizer are documented here.
 
+## [1.1.4] — 2026-05-28
+
+### Fixed
+- **Windows 포터블 빌드 미생성 (근본 수정)** — `electron-builder.config.ts` → `electron-builder.cjs`로 파일명 변경. electron-builder v24는 `configFilename: "electron-builder"` prefix로만 탐색(`electron-builder.{yml,json,js,cjs,ts}`) — `electron-builder.config.*` 형식은 탐색 대상이 아님. TypeScript sucrase 의존성도 동시 제거.
+
 ## [1.1.3] — 2026-05-28
 
 ### Fixed
-- **Windows 포터블 빌드 미생성 (근본 수정)** — `electron-builder.config.ts`가 CI에서 sucrase TypeScript 컴파일 실패로 로드되지 않아 electron-builder가 기본값(NSIS 설치파일, macOS zip, Linux snap)으로 폴백하던 문제 수정. `electron-builder.config.cjs` (CommonJS)로 전환하여 TypeScript 컴파일 의존성 제거.
+- **Windows 포터블 빌드 미생성 (시도)** — `electron-builder.config.ts` → `electron-builder.config.cjs` 전환. CJS 변환은 맞았으나 파일명 prefix가 잘못되어 여전히 config 로드 실패. v1.1.4에서 완전 수정.
 
 ## [1.1.2] — 2026-05-28
 
