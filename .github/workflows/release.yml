@@ -10,6 +10,7 @@ permissions:
 jobs:
   release:
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-latest
@@ -26,7 +27,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Set up Python (macOS DMG builder)
@@ -42,8 +43,7 @@ jobs:
         run: npm run ${{ matrix.build_cmd }} -- --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # Code signing — omit vars entirely when secrets are not configured;
+          # passing empty strings causes electron-builder to fail.
+          # Set these secrets in repo settings to enable signed builds.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
