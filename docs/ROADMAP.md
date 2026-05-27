@@ -163,38 +163,89 @@ Confidence 기반 72룰 탐지 시스템 완전 구현. `src/main/detector/`가 
 
 ---
 
-## M5 · 배포 준비 📦 `feat/m5-deploy`
+## M5 · 배포 준비 📦 `feat/m5-deploy` ✅
 
 > Windows / macOS / Linux 3개 플랫폼 패키징 + 자동 업데이트 + CI/CD.
 
-### 예정 항목
+**Completed: 2026-05-27** | Release: [v1.0.0](https://github.com/DIMBD-AKE/Markdown-Organizer/releases/tag/v1.0.0)
+
+### 완료 항목
 
 **아이콘 & 앱 메타데이터**
-- [ ] 앱 아이콘 제작: icon.icns (macOS), icon.ico (Windows), icon.png (Linux) → `build/` 배치
-- [ ] electron-builder.config.ts 완성: appId, copyright, productName, category
-- [ ] package.json 메타: author, homepage, repository
+- [x] 앱 아이콘 (build/icon.png 1254×1254)
+- [x] electron-builder.config.ts: appId, copyright, productName, publish, dmg, nsis, linux 설정
+- [x] package.json: author, homepage, repository, electron-updater 의존성
 
-**macOS**
-- [ ] DMG 설정: background 이미지, window 레이아웃
-- [ ] 코드사이닝: Apple Developer ID 환경변수 설정 (CSC_LINK, CSC_KEY_PASSWORD)
-- [ ] Notarization: APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
-
-**Windows**
-- [ ] NSIS 인스톨러 설정: one-click, perMachine, shortcuts
-- [ ] 코드사이닝 (선택): EV 인증서 환경변수
-
-**Linux**
-- [ ] AppImage + deb 설정
-- [ ] desktop 파일: 카테고리, 설명, MIME 타입
+**패키징**
+- [x] macOS: DMG (arm64 + x64)
+- [x] Windows: NSIS 인스톨러 (x64)
+- [x] Linux: AppImage (x64)
+- [x] better-sqlite3 asarUnpack (네이티브 모듈)
 
 **자동 업데이트**
-- [ ] `electron-updater` 추가
-- [ ] GitHub Releases 기반 업데이트 채널
-- [ ] 업데이트 확인 UI (설정 패널)
+- [x] `electron-updater` IPC 통합 (7개 채널: check/install/available/not-available/progress/downloaded/error)
+- [x] 앱 시작 5초 후 자동 확인
+- [x] 설정 패널 업데이트 UI (7-state: idle→checking→available→downloading→ready→error)
 
-**CI/CD (GitHub Actions)**
-- [ ] `.github/workflows/release.yml`: tag push → 3개 플랫폼 병렬 빌드 → GitHub Release 업로드
-- [ ] 빌드 캐시 최적화 (node_modules, electron 바이너리)
+**CI/CD**
+- [x] `.github/workflows/release.yml`: v* 태그 push → macOS/Windows/Linux 병렬 빌드
+- [x] `.github/workflows/ci.yml`: push/PR 자동 테스트 + 빌드 검증 (Node 22)
+- [x] `scripts/python` 래퍼: macOS DMG 빌더 Python 경로 fix
+
+**배포 안정화 (post-M5 hotfix)**
+- [x] CI Node 20→22 (node:sqlite 지원)
+- [x] Release 워크플로 코드사이닝 환경변수 제거 (CSC_LINK 빈값 → "not a file" 에러)
+- [x] Linux deb → AppImage only (deb가 Snap Store 자동 publish 트리거)
+- [x] fail-fast: false (플랫폼별 독립 실행)
+
+**Handoff Note (2026-05-27):**
+v1.0.0 GitHub Release 배포 완료 (macOS DMG, Windows exe, Linux AppImage). 배포 후 크로스플랫폼 테스트에서 버그 확인 → M6로 이관. 코드사이닝 없는 무서명 빌드 — macOS arm64에서 "손상된 파일" 오류 발생, 커스텀 타이틀바 환경에서 macOS 창 조작 불가. work-log: `docs/work-logs/2026-05-27-milestone-5-deploy.md`
+
+---
+
+## M6 · 크로스플랫폼 안정화 🔧 `feat/m6-stability`
+
+> v1.0.0 실배포 후 확인된 크로스플랫폼 버그 수정 + 포터블 빌드.
+
+### 버그
+
+**Windows**
+- [ ] 프로젝트 등록/오픈, 문서 클릭 시 일시적 렉
+  - 원인 추정: main 프로세스 SQLite 동기 I/O 또는 chokidar 파일워처 Windows 폴링 지연
+  - 방향: IPC 핸들러 병목 프로파일링 → async 분리 또는 워커스레드 이관
+
+**macOS**
+- [ ] "손상된 파일" 오류 — 실행 불가
+  - 원인: arm64 무서명 바이너리 → Gatekeeper 차단
+  - 방향: CI에서 ad-hoc 코드사이닝 (`codesign -s -`) 적용
+- [ ] 트래픽 라이트(창 컨트롤) 부재
+  - 원인: 커스텀 타이틀바(`frame: false`)에서 macOS 네이티브 버튼 비표시
+  - 방향: `titleBarStyle: 'hiddenInset'` + `trafficLightPosition` 설정, 또는 커스텀 버튼 UI 구현
+
+**공통**
+- [ ] README 깃허브 배지 미표시
+  - 방향: 저장소 공개 여부 및 배지 URL 확인
+- [ ] 버전 체크 404 에러
+  - 방향: v1.0.0 릴리즈 publish 이후 `latest.yml` 접근 경로 재확인
+
+### 요구 사항
+
+**포터블 빌드 (설치 불필요)**
+- [ ] Windows: NSIS 인스톨러 → portable exe 추가 (설치 없이 바로 실행)
+  - `electron-builder`: `win.target`에 `{ target: 'portable', arch: ['x64'] }` 추가
+- [ ] macOS: DMG는 이미 포터블 (드래그 없이 DMG 내에서 바로 실행 가능) ✅
+- [ ] Linux: AppImage는 이미 포터블 ✅
+
+### 우선순위
+
+| 순위 | 항목 | 영향도 |
+|------|------|--------|
+| P0 | macOS 손상 파일 | macOS 사용자 전체 실행 불가 |
+| P0 | macOS 트래픽 라이트 | 창 닫기/최소화 불가 |
+| P1 | Windows 렉 | 핵심 UX 저하 |
+| P1 | Windows 포터블 exe | 설치 없는 배포 |
+| P2 | 버전 체크 404 | 자동업데이트 오작동 |
+| P3 | 배지 미표시 | README 시각적 문제 |
 
 ---
 
