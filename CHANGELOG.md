@@ -2,6 +2,11 @@
 
 All notable changes to Markdown Organizer are documented here.
 
+## [1.1.3] — 2026-05-28
+
+### Fixed
+- **Windows 포터블 빌드 미생성 (근본 수정)** — `electron-builder.config.ts`가 CI에서 sucrase TypeScript 컴파일 실패로 로드되지 않아 electron-builder가 기본값(NSIS 설치파일, macOS zip, Linux snap)으로 폴백하던 문제 수정. `electron-builder.config.cjs` (CommonJS)로 전환하여 TypeScript 컴파일 의존성 제거.
+
 ## [1.1.2] — 2026-05-28
 
 ### Fixed

@@ -1,7 +1,6 @@
-import { defineConfig } from 'electron-builder'
-import { spawnSync } from 'child_process'
+const { spawnSync } = require('child_process')
 
-export default defineConfig({
+module.exports = {
   appId: 'com.markdown-organizer.app',
   productName: 'Markdown Organizer',
   copyright: `Copyright © ${new Date().getFullYear()} DIMBD-AKE`,
@@ -9,16 +8,11 @@ export default defineConfig({
   files: ['out/**'],
   asarUnpack: ['**/node_modules/better-sqlite3/**/*', '**/node_modules/bindings/**/*'],
 
-  // Ad-hoc sign on macOS before DMG creation.
-  // Reduces Gatekeeper "damaged app" probability on arm64 unsigned builds.
-  // Note: notarization still required for full bypass; users may need xattr -cr on first launch.
   afterPack: async (context) => {
     if (context.electronPlatformName !== 'darwin') return
     const appPath = `${context.appOutDir}/${context.packager.appInfo.productFilename}.app`
     console.log(`[afterPack] ad-hoc signing: ${appPath}`)
-    const result = spawnSync('codesign', ['--force', '--sign', '-', appPath], {
-      stdio: 'inherit',
-    })
+    const result = spawnSync('codesign', ['--force', '--sign', '-', appPath], { stdio: 'inherit' })
     if (result.status !== 0) {
       console.warn(`[afterPack] codesign exited ${result.status} — continuing unsigned`)
     }
@@ -57,4 +51,4 @@ export default defineConfig({
     description: 'Desktop app for managing AI-generated Markdown documents',
     executableName: 'markdown-organizer',
   },
-})
+}
