@@ -1,4 +1,4 @@
-const { spawnSync } = require('child_process')
+const { signApp } = require('./scripts/sign-mac.cjs')
 
 module.exports = {
   appId: 'com.markdown-organizer.app',
@@ -7,15 +7,12 @@ module.exports = {
   directories: { buildResources: 'build', output: 'dist' },
   files: ['out/**'],
   asarUnpack: ['**/node_modules/better-sqlite3/**/*', '**/node_modules/bindings/**/*'],
+  compression: 'maximum',
 
   afterPack: async (context) => {
     if (context.electronPlatformName !== 'darwin') return
     const appPath = `${context.appOutDir}/${context.packager.appInfo.productFilename}.app`
-    console.log(`[afterPack] ad-hoc signing: ${appPath}`)
-    const result = spawnSync('codesign', ['--force', '--sign', '-', appPath], { stdio: 'inherit' })
-    if (result.status !== 0) {
-      console.warn(`[afterPack] codesign exited ${result.status} — continuing unsigned`)
-    }
+    signApp(appPath)
   },
 
   publish: {
