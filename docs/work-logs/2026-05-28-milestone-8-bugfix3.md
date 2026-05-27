@@ -28,6 +28,109 @@ Previous lessons learned relevant to this milestone:
 
 ---
 
+## Verification Findings (2026-05-28, pre-implementation review)
+
+기존 계획 재검토 결과 — Task 1, 2의 접근법 오류 확인. 코드 정독 후 정정.
+
+### Task 1 정정 — `afterSign` 단독으로 불충분
+
+**문제:** `mac.identity: null` 상태에서 `afterSign` 훅 전환만으로는 Gatekeeper 차단 해소 안 됨.
+
+**실제 근본 원인:**
+- `codesign --force --sign - APP.app` (현재 코드, `--deep` 없음) → top-level bundle만 서명
+- 내부 Mach-O 바이너리 (Electron Helper.app, Squirrel.framework, libffmpeg.dylib 등) 미서명
+- macOS Gatekeeper는 quarantine xattr가 붙은 다운로드 앱에 대해 모든 nested 바이너리의 서명 무결성 검증 → 미서명 internal → "손상된 파일" 거부
+- `--deep` 플래그는 M7에서 locale.pak `Operation not permitted` 오류로 제거됨 (LESSONS_LEARNED 참고)
+
+**정정된 접근법:** afterPack 훅 유지, 내부 Mach-O 바이너리만 선별 서명 (locale.pak 등 .pak 데이터 파일은 스킵). `--deep` 미사용으로 권한 오류 회피.
+
+```js
+afterPack: async (context) => {
+  if (context.electronPlatformName !== 'darwin') return
+  const appPath = `${context.appOutDir}/${context.packager.appInfo.productFilename}.app`
+  const frameworks = `${appPath}/Contents/Frameworks`
+
+  // 1. Sign all Helper apps (nested .app bundles)
+  const helpers = await findPaths(frameworks, /\.app$/)
+  for (const helper of helpers) codesignAdHoc(helper)
+
+  // 2. Sign all .framework bundles
+  const fwks = await findPaths(frameworks, /\.framework$/)
+  for (const fw of fwks) codesignAdHoc(fw)
+
+  // 3. Sign all .dylib files
+  const dylibs = await findFilesByExt(appPath, '.dylib')
+  for (const dylib of dylibs) codesignAdHoc(dylib)
+
+  // 4. Sign top-level .app LAST (after all nested signatures established)
+  codesignAdHoc(appPath)
+}
+```
+
+**검증 방법:** 로컬 빌드 후 `codesign --verify --strict --deep --verbose=4 APP.app` — 모든 nested 바이너리 valid 확인.
+
+**한계 인정:** Apple Developer ID + notarization 없이는 macOS 일부 환경(특히 Sequoia 15.x 이후 arm64)에서 여전히 차단 가능. 그 경우 사용자에게 `xattr -cr` 안내 필요. README에 추가.
+
+---
+
+### Task 2 정정 — `OPEN_PATH`는 `shell.openExternal`이 아님
+
+**문제:** 기존 계획서 "openPath = shell.openExternal wrapper" 기재는 코드와 불일치.
+
+**실제 코드 (`src/main/ipc/projects.ts:48-50`):**
+```ts
+ipcMain.handle(IPC.OPEN_PATH, async (_e, targetPath: string) => {
+  await shell.openPath(targetPath)
+})
+```
+
+- `shell.openPath()` = 파일시스템 경로 전용 (파일/디렉터리 열기)
+- `shell.openExternal()` = URL 전용 (https://, mailto:, 등)
+- 둘 다 다른 API. `openPath`에 URL 넘기면 Electron 버전에 따라 동작 불확정 (일부는 빈 에러, 일부는 OS에 따라 작동).
+
+**정정된 접근법:** 새 IPC 채널 `OPEN_EXTERNAL` 추가. 명확한 분리.
+
+```ts
+// channels.ts
+OPEN_EXTERNAL: 'open-external',
+
+// ipc/projects.ts
+ipcMain.handle(IPC.OPEN_EXTERNAL, async (_e, url: string) => {
+  // Whitelist: http/https only — 보안상 file:, javascript: 등 차단
+  if (!/^https?:\/\//.test(url)) return
+  await shell.openExternal(url)
+})
+
+// preload/index.ts
+openExternal: (url: string) => ipcRenderer.invoke(IPC.OPEN_EXTERNAL, url),
+```
+
+**보안 고려:** preload/main 양쪽에서 `http(s):` 프로토콜만 허용 화이트리스트. 마크다운 내 악성 `javascript:` URL 차단.
+
+---
+
+### Task 4 보강 — 양축 동시성 제어
+
+`fs.ts:52-65` 코드 재확인:
+```ts
+const [dirChildren, fileChildren] = await Promise.all([
+  Promise.all(dirs.map((d) => buildFileTreeInner(...))),  // 재귀 무제한
+  Promise.all(files.map(async (f) => fs.promises.stat(...)))  // stat 무제한
+])
+```
+
+깊이 5 + 디렉터리당 평균 10폴더 = 최악 10^5 = 100K 동시 호출 가능. Windows Defender 스캔 + I/O 큐 폭주.
+
+**Fix:** pMap 두 곳 모두 적용. limit: 디렉터리 4, 파일 stat 8.
+
+---
+
+### Task 3 — 변경 없음
+
+문서 계획 그대로 진행. `img-src` 에 `https:` 추가.
+
+---
+
 ## Task Breakdown
 
 ### Task 0: Windows 포터블 exe 빌드 (P0) — 삽질 이력
@@ -195,7 +298,36 @@ Option B 권장: 신선도 기능 유지. limit=4 정도면 Windows에서 안전
 
 ### Task 5: 빌드 용량 최적화 (P2)
 
-**Problem:** 현재 배포 파일 크기 미측정. 최적화 가능 항목 파악 필요.
+**측정 결과 (2026-05-28):**
+- `.app` (mac-arm64): 393 MB
+- `app.asar`: 167 MB ← v1.1.2 stale (config 미로드로 모든 프로젝트 파일 포함됨)
+- `Frameworks/`: 225 MB ← Electron framework + helpers (불가피한 고정 비용)
+- DMG: 143 MB compressed
+- `out/`: 17 MB (실제 빌드 출력 — 정상 config 로드 시 app.asar 크기)
+
+**개선 적용 (M8):**
+- [x] `electron-builder.cjs`에 `compression: 'maximum'` 추가 → LZMA 압축으로 DMG/AppImage/exe 크기 ~5-10% 감소 예상
+
+**향후 최적화 항목 (M8 비범위, 별도 작업):**
+
+1. **Shiki 언어 번들 슬림화 (잠재 ~10MB 감소)**
+   - 현재: `shiki` 풀 패키지 → Vite가 모든 270+ 언어를 별도 청크로 빌드 (`out/renderer/assets/` 358 파일)
+   - 실제 사용: 12개 언어만 (`shiki.ts`)
+   - 마이그레이션 필요: `createHighlighter` → `createHighlighterCore` (`@shikijs/core`)
+   ```ts
+   import { createHighlighterCore } from 'shiki/core'
+   import { createOnigurumaEngine } from 'shiki/engine/oniguruma'
+   const highlighter = await createHighlighterCore({
+     themes: [import('@shikijs/themes/catppuccin-mocha')],
+     langs: [import('@shikijs/langs/typescript'), ...],
+     engine: createOnigurumaEngine(import('shiki/wasm'))
+   })
+   ```
+   - 영향도: 비교적 큼 (코드 변경 + 동적 import 패턴 + 테스트). M9 또는 별도 PR 권장.
+
+2. **Mermaid lazy load**: 이미 적용됨 (diagram type별 청크 분리 확인 — wardley, architecture, cytoscape 등 별도 .js).
+
+**Problem (이전):** 현재 배포 파일 크기 미측정. 최적화 가능 항목 파악 필요.
 
 **Investigation:**
 ```bash

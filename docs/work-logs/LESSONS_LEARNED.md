@@ -2,6 +2,88 @@
 
 ---
 
+## `shell.openPath` ≠ `shell.openExternal` — URL은 외부 브라우저 안 열림 — 2026-05-28
+
+**Symptom:** 마크다운 내 `[text](https://...)` 클릭이 Electron 앱 WebContents에서 열림. 기본 브라우저로 안 옴.
+
+**Root cause:** `OPEN_PATH` IPC 핸들러가 `shell.openPath(target)` 사용. 이는 **파일시스템 경로** 전용 API. URL을 넘기면 동작 불확정 (Electron 31 기준: 빈 string 반환하며 무동작). `<a href>` 클릭은 `webContents.loadURL`로 fallback.
+
+**Failed assumption:** 기존 M8 계획서에 "`openPath` = `shell.openExternal` wrapper" 라고 적었으나, 실제 코드 검증 시 다른 API. 문서 신뢰 전 코드 검증 필수.
+
+**Correct fix:** 새 IPC 채널 `OPEN_EXTERNAL` 분리.
+```ts
+ipcMain.handle(IPC.OPEN_EXTERNAL, async (_e, url) => {
+  if (!isAllowedExternalUrl(url)) return  // http(s) 화이트리스트
+  await shell.openExternal(url)
+})
+```
+보안: `javascript:`, `file:`, `data:` 등 거부.
+
+---
+
+## macOS ad-hoc codesign — top-level만 서명 시 Gatekeeper 거부 — 2026-05-28
+
+**Symptom:** `codesign --force --sign - APP.app` (no `--deep`) 후에도 다운로드 앱에서 "손상된 파일" 오류. 사용자에게 `xattr -cr` 안내 필요.
+
+**Root cause:**
+- Top-level `--sign -` 만으로는 .app 번들의 primary executable + Info.plist 메타데이터만 서명.
+- 내부 Mach-O 바이너리 미서명: `.dylib`, Helper.app 내부 실행파일, framework primary executable, `.node` (N-API modules).
+- macOS Gatekeeper는 quarantine xattr이 붙은 다운로드 앱에 대해 모든 nested code의 무결성 검증 → 미서명 internal → 거부.
+
+**Failed approach:** `--deep` 플래그는 locale.pak에서 `Operation not permitted` 발생 (M7 lesson). 모든 리소스 파일에 xattr 쓰기 시도해서 일부 파일에서 권한 거부.
+
+**Correct fix:** 선별적 deep signing — Mach-O 후보만 골라서 bottom-up 서명. `.pak/.dat/.icns/.lproj` 등 리소스 파일은 건드리지 않음.
+```js
+// scripts/sign-mac.cjs
+function collectTargets(dir, results) {
+  // Mach-O 후보: .dylib, .so, .node 파일
+  // 번들: .framework, .app 디렉터리 (내부 먼저 descend 후 추가 → bottom-up)
+  // 스킵: .lproj (localization), .pak, .icns, .plist
+}
+```
+
+**검증:** `codesign --verify --strict --deep --verbose=2 APP.app` → "valid on disk" + "satisfies its Designated Requirement". 빌드 단계에서 자동 실행.
+
+**한계 인정:** Apple Developer ID + notarization 없이는 macOS Sequoia 15.x arm64 일부 환경에서 여전히 차단 가능. 그 경우 README에 `xattr -cr` 안내 필요.
+
+---
+
+## Electron asar files 패턴 — config 미로드 시 전체 프로젝트 번들됨 — 2026-05-28
+
+**Symptom:** v1.1.2 `app.asar` = 167MB. `out/**` 외에 `docs/`, `tests/`, `node_modules/`, `src/`, `.superpowers/` 등 전체 포함.
+
+**Root cause:** v1.1.2 시점에 electron-builder config 파일명 prefix 오류로 config 미로드 → `files` 필터 미적용 → electron-builder 기본 동작 (전체 프로젝트 inclusion).
+
+**Correct fix:** config 정상 로드 시 `files: ['out/**']` 작동 → app.asar = ~17MB. 빌드 후 첫 확인 항목: `ls -lh app.asar` 크기 점검.
+
+**검증법:**
+```bash
+du -sh "$APP/Contents/Resources/app.asar"
+npx asar list "$APP/Contents/Resources/app.asar" | awk -F'/' '{print $2}' | sort -u
+# 정상: out, package.json 정도만. 비정상: docs, tests, src 등 다수.
+```
+
+---
+
+## 재귀 `Promise.all` — 깊은 트리에서 I/O 큐 폭주 — 2026-05-28
+
+**Symptom:** Windows에서 프로젝트 오픈 시 일시적 버벅거림. async detector 전환 후에도 지속.
+
+**Root cause:** `buildFileTree`의 `Promise.all(dirs.map(recurse))` × `Promise.all(files.map(stat))` 중첩 → 깊이 5, 디렉터리당 평균 10 = 최대 10^5 동시 syscall. Windows Defender 각 파일 스캔 + I/O 큐 폭주.
+
+**Correct fix:** Semaphore로 전역 I/O 동시성 제한. 모든 stat/readdir이 공유 semaphore acquire/release.
+```ts
+const FS_CONCURRENCY = 8
+const sem = new Semaphore(FS_CONCURRENCY)
+await withSemaphore(sem, () => fs.promises.stat(path))
+```
+
+핵심: **재귀 호출 자체를 제한하지 않고, 실제 syscall만 제한.** 재귀는 자유롭게 spawn (pending Promise는 메모리만 소비), 실제 I/O는 8 동시. Pending acquire는 큐에 대기.
+
+`pMap`처럼 호출 레벨 제한은 깊은 트리에서 cascade (limit^depth) → 부족. Semaphore 공유가 정답.
+
+---
+
 ## electron-builder v24 config 파일명 — `.config.` prefix 탐색 안 됨 — 2026-05-28
 
 **Symptom:** `electron-builder.config.ts` (또는 `.config.cjs`) 존재해도 electron-builder가 기본값 사용. Windows: NSIS, macOS: zip+DMG, Linux: snap+AppImage.
