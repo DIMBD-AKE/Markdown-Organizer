@@ -4,6 +4,7 @@ import { IPC } from './channels'
 import { getDb } from '../db'
 import { getAllProjects, getProjectState, getSetting } from '../db/queries'
 import { buildFileTree } from '../fs'
+import { analyzeDirectory } from '../detector'
 import type { AppState } from '../../renderer/src/types'
 
 export function registerFileHandlers(): void {
@@ -21,7 +22,15 @@ export function registerFileHandlers(): void {
 
   ipcMain.handle(IPC.GET_APP_STATE, async (): Promise<AppState> => {
     const db = getDb()
-    const projects = getAllProjects(db)
+    const rawProjects = getAllProjects(db)
+    const projects = rawProjects.map((p) => {
+      try {
+        const result = analyzeDirectory(p.path)
+        return { ...p, icon: result.icon, frameworks: result.frameworks, confidence: result.confidence }
+      } catch {
+        return p
+      }
+    })
     const activeProjectId = getSetting(db, 'active_project_id')
     const projectStates: AppState['projectStates'] = {}
     for (const p of projects) {

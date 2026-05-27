@@ -1,6 +1,32 @@
 export type ProjectType =
   | 'unity' | 'unreal' | 'node' | 'rust' | 'python'
   | 'ai-research' | 'docs' | 'unknown'
+  | 'go' | 'java' | 'php' | 'ruby' | 'dart' | 'cpp' | 'csharp'
+
+export interface ProjectEvidence {
+  rule: string
+  path: string
+  score: number
+}
+
+export interface ProjectWarning {
+  code: string
+  message: string
+}
+
+export interface DetectionResult {
+  primaryType: ProjectType
+  icon: string
+  confidence: number
+  frameworks: string[]
+  languages: string[]
+  buildSystems: string[]
+  packageManagers: string[]
+  platforms: string[]
+  runtimes: string[]
+  evidence: ProjectEvidence[]
+  warnings: ProjectWarning[]
+}
 
 export interface Project {
   id: string
@@ -10,6 +36,8 @@ export interface Project {
   icon: string
   lastOpened: number | null
   createdAt: number
+  frameworks?: string[]
+  confidence?: number
 }
 
 export interface FileNode {

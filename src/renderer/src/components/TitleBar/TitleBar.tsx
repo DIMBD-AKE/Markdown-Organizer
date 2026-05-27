@@ -16,6 +16,13 @@ const TYPE_LABEL: Partial<Record<ProjectType, string>> = {
   python:        'Python',
   'ai-research': 'AI',
   docs:          'Docs',
+  go:            'Go',
+  java:          'Java',
+  php:           'PHP',
+  ruby:          'Ruby',
+  dart:          'Dart',
+  cpp:           'C++',
+  csharp:        'C#',
 }
 
 export default function TitleBar() {
@@ -149,11 +156,32 @@ export default function TitleBar() {
           )}
         </button>
 
-        {activeTypeLabel && (
+        {activeProject?.frameworks && activeProject.frameworks.length > 0 ? (
+          <div className="flex items-center gap-1">
+            {activeProject.frameworks.slice(0, 3).map((fw) => (
+              <span key={fw} className="text-[10px] text-overlay0 font-mono bg-surface0 px-1.5 py-0.5 rounded flex-shrink-0">
+                {fw}
+              </span>
+            ))}
+            {activeProject.frameworks.length > 3 && (
+              <span className="text-[10px] text-overlay0 font-mono bg-surface0 px-1.5 py-0.5 rounded flex-shrink-0">
+                +{activeProject.frameworks.length - 3}
+              </span>
+            )}
+            {activeProject.confidence !== undefined && activeProject.confidence < 50 && (
+              <span
+                className="text-[10px] text-amber font-mono bg-surface0 px-1.5 py-0.5 rounded flex-shrink-0"
+                title="낮은 신뢰도"
+              >
+                ?
+              </span>
+            )}
+          </div>
+        ) : activeTypeLabel ? (
           <span className="text-[10px] text-overlay0 font-mono bg-surface0 px-1.5 py-0.5 rounded flex-shrink-0">
             {activeTypeLabel}
           </span>
-        )}
+        ) : null}
       </div>
 
       <div className="flex-1" />

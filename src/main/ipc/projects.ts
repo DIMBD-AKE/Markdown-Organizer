@@ -4,7 +4,7 @@ import path from 'path'
 import { IPC } from './channels'
 import { getDb } from '../db'
 import { upsertProject, deleteProject, upsertProjectState } from '../db/queries'
-import { analyzeDirectory } from '../analyzer'
+import { analyzeDirectory } from '../detector'
 import { startWatcher } from '../watcher'
 import type { Project, ProjectState } from '../../renderer/src/types'
 
@@ -16,15 +16,17 @@ export function registerProjectHandlers(): void {
 
   ipcMain.handle(IPC.ADD_PROJECT, async (_e, folderPath: string) => {
     const db = getDb()
-    const { type, icon } = analyzeDirectory(folderPath)
+    const result = analyzeDirectory(folderPath)
     const project: Project = {
       id: randomUUID(),
       name: path.basename(folderPath),
       path: folderPath,
-      type,
-      icon,
+      type: result.primaryType,
+      icon: result.icon,
       lastOpened: Date.now(),
-      createdAt: Date.now()
+      createdAt: Date.now(),
+      frameworks: result.frameworks,
+      confidence: result.confidence,
     }
     upsertProject(db, project)
     return project
