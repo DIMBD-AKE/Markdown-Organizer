@@ -2,6 +2,27 @@
 
 ---
 
+## electron-builder v24 config 파일명 — `.config.` prefix 탐색 안 됨 — 2026-05-28
+
+**Symptom:** `electron-builder.config.ts` (또는 `.config.cjs`) 존재해도 electron-builder가 기본값 사용. Windows: NSIS, macOS: zip+DMG, Linux: snap+AppImage.
+
+**Root cause:**
+`app-builder-lib` 내부에서 `configFilename: "electron-builder"` prefix만 탐색:
+```
+electron-builder.yml / .yaml / .json / .json5 / .toml / .js / .cjs / .ts
+```
+`electron-builder.config.*` 형식은 탐색 대상 아님. `.config.ts`가 로드 안 된 것도 동일 이유.
+
+**Failed attempts:**
+1. `electron-builder.config.ts` — 처음부터 로드 안 됨 (파일명 오류 + sucrase 실패 복합)
+2. `electron-builder.config.cjs` — CJS 변환은 맞았으나 파일명 prefix 오류로 여전히 탐색 안 됨
+
+**Correct fix:** `electron-builder.cjs` (`.config.` 없이). CommonJS, sucrase 불필요.
+
+**config 로드 실패 확인법:** CI 로그에서 실제 타겟 출력 확인. `target=nsis` (기본값) → config 로드 실패. `target=portable` → config 로드 성공.
+
+---
+
 ## electron-builder `onTagOrDraft` — GH_TOKEN 없어도 자동 publish 시도 — 2026-05-27
 
 **Symptom:** CI build step에서 `GH_TOKEN` 제거해도 `"artifacts will be published reason=tag is defined"` 로그 후 실패. Windows: `GitHub Personal Access Token is not set`. Linux: `snapcraft is not installed`.

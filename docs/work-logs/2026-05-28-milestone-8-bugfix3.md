@@ -30,6 +30,51 @@ Previous lessons learned relevant to this milestone:
 
 ## Task Breakdown
 
+### Task 0: Windows 포터블 exe 빌드 (P0) — 삽질 이력
+
+**Problem:** v1.1.2 이후 Windows 릴리즈에 `markdown-organizer.Setup.*.exe` (NSIS 설치파일) 생성. `portable` 타겟 설정에도 불구.
+
+**Root cause — 분석 과정:**
+
+**시도 1 (v1.1.2): `electron-builder.config.ts` 유지**
+- 증상: CI 로그에 `target=nsis`. config 파일에 `portable` 명시에도 무관.
+- 가설: sucrase(TypeScript 컴파일러)가 CI에서 실패하여 config 파일 로드 안 됨.
+- 증거: 동일 빌드에서 macOS가 `zip`(config에 없는 타겟), Linux가 `snap`(config에 없는 타겟) 생성 → 모두 electron-builder 기본값 → config 파일 로드 실패 확정.
+- 결론: 맞음.
+
+**시도 2 (v1.1.3): `electron-builder.config.ts` → `electron-builder.config.cjs`**
+- 변경: sucrase 의존성 제거 목적으로 TypeScript → CommonJS 변환.
+- 증상: CI 여전히 `target=nsis`. macOS `zip` + DMG, Linux `snap` + AppImage.
+- 원인 분석: `read-config-file@6.3.2` 소스 분석 결과, `findAndReadConfig`가 `request.configFilename` prefix로 탐색.
+  ```js
+  // app-builder-lib/out/util/config.js:35
+  const configRequest = { ..., configFilename: "electron-builder", ... }
+  
+  // read-config-file/out/main.js:42
+  for (const configFile of [`${prefix}.yml`, ..., `${prefix}.js`, `${prefix}.cjs`, `${prefix}.ts`])
+  ```
+  prefix = `"electron-builder"` → 탐색 대상: `electron-builder.{yml,yaml,json,json5,toml,js,cjs,ts}`.
+  `electron-builder.config.cjs` (`.config.` 포함) 탐색 대상 아님.
+  원래 `electron-builder.config.ts`도 동일 이유로 처음부터 로드 안 된 것.
+- 결론: 파일명 prefix 오류.
+
+**시도 3 (v1.1.4 — 정답): `electron-builder.cjs`로 rename**
+- 변경: `electron-builder.config.cjs` → `electron-builder.cjs`
+- 결과: CI 확인 필요 (v1.1.4 태그 푸시됨, 2026-05-28).
+
+**교훈:**
+- electron-builder v24 config 파일명: `electron-builder.{yml|yaml|json|json5|toml|js|cjs|ts}` — `.config.` 접두사 없음.
+- `electron-builder.config.ts` 형식은 공식 문서 표기와 달리 electron-builder v24.13.3 내부 코드에서 탐색하지 않음.
+- config 로드 여부 확인법: CI 로그에서 타겟명 체크 (`target=nsis` → 기본값 → config 로드 실패).
+
+**구조적 한계 — 단일 exe 가능성:**
+- `portable` 타겟은 electron-builder 공식 지원 타겟. 실행 시 임시 디렉터리에 압축 해제, 실행 후 삭제.
+- 완전한 "single file" exe (압축 해제 없이)는 Electron 아키텍처상 불가 — ASAR + native bindings(better-sqlite3)가 filesystem 필요.
+- `portable` = 사용자 관점에서 단일 실행 파일 (설치 불필요, 레지스트리 미수정) — 실질적으로 충분.
+- NSIS portable과 electron-builder portable의 차이: 전자는 NSIS 래퍼(설치 동작), 후자는 진짜 portable exe.
+
+---
+
 ### Task 1: macOS 손상된 파일 지속 해결 (P0)
 
 **Problem:** `codesign --force --sign - APP.app` (top-level, no --deep) 서명 후에도 macOS Gatekeeper "손상된 파일" 오류 지속.
