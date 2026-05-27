@@ -135,6 +135,66 @@ Vite 빌드 타임 분석 우회.
 
 ---
 
+## DOM TreeWalker — live NodeList 순회 중 삽입 금지 — 2026-05-27
+
+**Symptom:** TreeWalker로 텍스트 노드 순회하며 `<mark>` 삽입 시 무한 순회 또는 mark 노드 자체를 재방문.
+
+**Root cause:** TreeWalker가 live DOM 트리를 참조. 텍스트 노드 분리 후 mark 삽입하면 walker가 새 노드를 재방문.
+
+**Correct fix:** 순회 먼저, 수집 후 처리:
+```ts
+const nodesToProcess: Text[] = []
+while ((node = walker.nextNode())) nodesToProcess.push(node as Text)
+// 수집 완료 후 mutate
+for (const textNode of nodesToProcess) { ... }
+```
+
+---
+
+## Global RegExp lastIndex — 파일 간 상태 오염 — 2026-05-27
+
+**Symptom:** 두 번째 파일부터 일부 매칭 누락. `gi` 플래그 RegExp를 여러 파일에 재사용 시 발생.
+
+**Root cause:** `gi` 플래그 RegExp는 `lastIndex`가 인스턴스에 저장됨. 한 파일 검색 완료 후 `lastIndex`가 0이 아닌 값이면 다음 파일 첫 줄에서 잘못된 위치부터 검색.
+
+**Correct fix:** 파일마다 새 RegExp 인스턴스 생성:
+```ts
+const pattern = new RegExp(basePattern.source, basePattern.flags) // 파일마다 fresh
+```
+또는 각 줄 시작 전 `pattern.lastIndex = 0` 명시적 리셋.
+
+---
+
+## remarkPlugins/rehypePlugins 배열 useMemo 필수 — 2026-05-27
+
+**Symptom:** MarkdownRenderer 부모 리렌더 시 CodeBlock/MermaidDiagram 언마운트 → state 소멸.
+
+**Root cause:** `remarkPlugins={[remarkGfm]}` 인라인 배열은 렌더마다 새 참조 → ReactMarkdown이 props 변경으로 인식 → 자식 전체 리마운트.
+
+**Correct fix:**
+```ts
+const remarkPluginsArr = useMemo(() => [remarkGfm], [])
+const rehypePluginsArr = useMemo(() => [rehypeRaw, rehypeSlug], [])
+// as const 금지 — Pluggable[] 타입과 readonly 호환 안 됨
+```
+
+---
+
+## clearMarks normalize() — 루프 내 호출 O(n²) → Set 패턴 — 2026-05-27
+
+**Symptom:** mark 다수인 단락에서 normalize() 반복 호출로 불필요한 DOM 재계산.
+
+**Root cause:** `forEach mark → parent.normalize()` 패턴에서 같은 parent를 N번 normalize.
+
+**Correct fix:**
+```ts
+const parents = new Set<Node>()
+marks.forEach(mark => { ...; parents.add(mark.parentNode) })
+parents.forEach(p => (p as Element).normalize())
+```
+
+---
+
 ## Tailwind 하드코딩 hex vs CSS 변수 테마 — 2026-05-26
 
 **Symptom:** `bg-base` 등이 테마 전환 후에도 Mocha(dark) 색상 유지.

@@ -1,258 +1,117 @@
-# Milestone 3: 검색 기능 (M3)
+# Milestone 3: 검색 기능
 
 **Branch:** `feat/m3-search`
-**Created:** 2026-05-27
-**Status:** In Progress
+**Completed:** 2026-05-27 11:00
+**Status:** Completed ✅
 
 ---
 
-## Context (Read This First)
+## Purpose
 
-M2 완료 후 상태:
-- 앱 실행/빌드 정상, 21/21 테스트 통과
-- Sidebar에 검색 탭 아이콘 + 라우팅 존재 (`sidebarTab === 'search'` → `SearchPanel`)
-- `SearchPanel.tsx` 현재 스텁 ("준비 중" 텍스트만 있음)
-- IPC 채널/핸들러 구조 확립 (`src/main/ipc/channels.ts` + `src/main/ipc/projects.ts`)
-- Zustand selector 분리 필수, useMemo(components) 필수 — 렌더링 안정성 핵심 패턴
-
-M3 목표: Sidebar "검색" 탭 완성 — 전체 텍스트/파일명/Heading 검색, 결과 클릭 시 뷰어 이동 + 하이라이트, 이전/다음 네비게이션.
-
-명세 전문: `docs/side-search.md`
-
-LESSONS_LEARNED.md에서 M3에 적용되는 항목:
-- Zustand no-selector = 전체 state 구독 (scrollPos 등 무관한 변경에도 리렌더)
-- ReactMarkdown components useMemo 필수 (filePath deps)
-- StrictMode useRef cleanup-only 패턴 피하기
+Sidebar "검색" 탭을 완전히 구현한다. 전체 텍스트/Regex/와일드카드 검색, 결과 클릭 시 뷰어 이동, 뷰어 내 하이라이트, 이전/다음 내비게이션, Cmd+F 단축키.
 
 ---
 
-## Task Breakdown
+## What Was Built
 
-### Task 1: IPC — searchFiles 핸들러
+**IPC 레이어 (`src/main/ipc/search.ts`)**
+- `collectMdFiles(dirPath)` — `.md` + `.markdown` 재귀 수집 (순수 함수, 테스트 가능)
+- `buildSearchPattern(query, mode)` — string/regex 공용 RegExp 빌더. string 모드: 특수문자 이스케이프 후 `*` → `.*`, `?` → `.` 와일드카드 변환
+- `searchInLoadedFiles(files, query, mode)` — 사전 로드된 컨텐츠 기반 검색 핵심 로직 (I/O 없음)
+- `searchInFiles(filePaths, query, mode)` — 동기 파일 읽기 래퍼 (unit test 호환 유지)
+- `registerSearchHandlers()` — async IPC 핸들러: `Promise.allSettled` 병렬 읽기 → `searchInLoadedFiles`
 
-**Files to create:**
-- `src/main/ipc/search.ts`
+**타입 확장 (`src/renderer/src/types/index.ts`)**
+- `SearchQuery`, `SearchMatch`, `SearchResult` 추가
 
-**Files to modify:**
-- `src/main/ipc/channels.ts` — `SEARCH_FILES: 'search-files'` 추가
-- `src/main/index.ts` — search IPC 핸들러 등록
-- `src/preload/index.ts` — `searchFiles` expose
-- `src/preload/api.d.ts` — 타입 선언
+**Preload (`src/preload/index.ts`, `src/preload/api.d.ts`)**
+- `window.api.searchFiles(query: SearchQuery)` 노출
 
-**Implementation notes:**
+**채널 (`src/main/ipc/channels.ts`)**
+- `SEARCH_FILES: 'search-files'` 추가
 
-```ts
-// channels.ts 추가
-SEARCH_FILES: 'search-files',
+**Store (`src/renderer/src/stores/searchStore.ts`)**
+- `query/mode/scope/results/isSearching/error` — 검색 상태
+- `activeFilePath/activeMatchIndex/activeFileMatches/totalMatchCount` — 뷰어 하이라이트 상태
+- `clearSearch()` — mode/scope 보존, 나머지 초기화
 
-// search.ts 핸들러 시그니처
-interface SearchQuery {
-  query: string
-  mode: 'string' | 'regex'
-  scope: 'current' | 'all'   // 'current' = activeProjectId 기준
-  projectPaths: string[]      // scope='current' 이면 [activePath], scope='all' 이면 모든 경로
-}
+**SearchPanel (`src/renderer/src/components/Search/SearchPanel.tsx`)**
+- 입력 + Enter, scope 라디오, mode 라디오, 검색 버튼
+- 결과 카드: 프로젝트 이름(전체 경로 tooltip) + 스니펫 + `N건 일치`
+- 클릭 → `readFile` → `viewerStore.setFile` + `searchStore.setActiveFile`
+- sidebarTab 변경 시 input auto-focus
 
-interface SearchMatch {
-  lineNumber: number
-  lineText: string
-  matchStart: number   // 라인 내 match 시작 인덱스
-  matchEnd: number     // 라인 내 match 끝 인덱스
-}
+**In-viewer 하이라이트 (`src/renderer/src/components/Viewer/MarkdownRenderer.tsx`)**
+- `clearMarks(container)` — mark 제거 + parent Set 기반 `normalize()`
+- `buildHighlightRegex(query, mode)` — string 모드 와일드카드 지원
+- `insertMarks(container, regex)` — TreeWalker 수집 → DocumentFragment 삽입
+- Effect 1 (`[filePath, content, activeFilePath, searchQuery, searchMode]`): 마크 삽입 + totalMatchCount 업데이트
+- Effect 2 (`[activeMatchIndex]`): mark-current 클래스 이동 + scrollIntoView
+- `remarkPlugins`/`rehypePlugins` 배열 `useMemo` 메모이제이션 추가 (리마운트 방지)
 
-interface SearchResult {
-  filePath: string
-  fileName: string
-  matchCount: number
-  matches: SearchMatch[]   // 최대 3개 미리보기 (나머지는 클릭 후 in-viewer)
-}
+**DocHeader (`src/renderer/src/components/Viewer/DocHeader.tsx`)**
+- 검색 활성 시 `[N/M] [↑] [↓] [×]` 표시
+- viewerStore/fileTreeStore 전체 구독 버그도 함께 수정 (개별 selector 교체)
+
+**App.tsx**
+- `Cmd+F` / `Ctrl+F` 전역 keydown → `setSidebarTab('search')`
+
+**CSS (`src/renderer/src/index.css`)**
+- `mark.search-mark` — amber 30% 배경
+- `mark.search-mark.mark-current` — amber 65% + outline
+
+**테스트 (`tests/unit/search.test.ts`)**
+- 41/41 통과 (신규 20개: collectMdFiles 4개, string 7개, wildcard 3개, regex 4개, empty 2개)
+
+---
+
+## Key Decisions
+
+**DOM 하이라이트 vs rehype 플러그인**
+rehype AST는 줄 번호 정보 없음. DOM TreeWalker 방식으로 렌더 후 직접 삽입. React reconciler 충돌 없이 순수 DOM 조작.
+
+**searchInLoadedFiles 분리**
+IPC 핸들러는 async 병렬 읽기 사용하지만 핵심 검색 로직은 순수 함수로 분리. 테스트는 동기 `searchInFiles` 래퍼로 기존 호환성 유지.
+
+**totalMatchCount**
+IPC 결과(최대 3개 미리보기)와 실제 DOM 발견 수 분리. MarkdownRenderer가 DOM 탐색 후 설정 → DocHeader `[N/M]` 카운터 정확도 확보.
+
+**와일드카드**
+string mode에서 `*`/`?` 이스케이프 제외 후 regex 변환. IPC + DOM highlight 양쪽 동일 로직.
+
+---
+
+## Errors and Corrections
+
+1. **SearchMatch 누락 (api.d.ts)** — 스펙 리뷰어 발견. import에 `SearchMatch` 빠짐 → 추가.
+2. **`.markdown` 확장자 누락** — 코드 품질 리뷰어 발견 (`docs/side-search.md` 섹션 2.2 명시). collectMdFiles 조건 추가 + 테스트 추가.
+3. **font-medium vs font-semibold** — 스펙 "bold" 명시. 수정.
+4. **에러 경로 stale results** — 빈 쿼리/프로젝트 없음 조건에서 `setResults([])` 누락. 양 경로에 추가.
+5. **UI 언어 불일치** — `matches` (영문) → `건 일치` (한국어).
+6. **showClear에 error 미포함** — `|| !!error` 추가.
+7. **Effect 1 항상 mark 0으로 스크롤** — `activeMatchIndex` 무시. `Math.min(activeMatchIndex, marks.length - 1)` 사용.
+8. **buildHighlightRegex catch 광범위** — `catch {}` → `catch (e) { if (e instanceof SyntaxError) return null; throw e }`.
+9. **clearMarks normalize() 루프 내 반복** — parent Set 수집 후 루프 외부에서 once per parent.
+
+---
+
+## Test Results
+
 ```
-
-구현 전략:
-- `fs.readdirSync` 재귀 대신 이미 있는 `getFileTree` 로직 재활용하거나 직접 `glob` 패턴으로 `.md` 파일 수집
-- 파일당 `fs.readFileSync` → 줄 분리 → 각 줄에 문자열/regex 매치 검사
-- regex 오류 시 `{ error: 'invalid_regex' }` 반환
-- 결과는 matchCount 내림차순 정렬
-- 성능: 파일 수 많은 프로젝트 대비 동기 처리 (Electron main process는 UI 블로킹 없음), 필요 시 chunked 비동기로 전환
-
-**api.d.ts 추가:**
-```ts
-searchFiles(query: SearchQuery): Promise<{ results: SearchResult[]; error?: string }>
-```
-
----
-
-### Task 2: searchStore
-
-**Files to create:**
-- `src/renderer/src/stores/searchStore.ts`
-
-**Implementation notes:**
-
-```ts
-interface SearchStore {
-  query: string
-  mode: 'string' | 'regex'
-  scope: 'current' | 'all'
-  results: SearchResult[]
-  isSearching: boolean
-  error: string | null
-  // in-viewer highlight state
-  activeFilePath: string | null
-  activeMatchIndex: number     // 현재 뷰어에서 몇 번째 match
-  activeFileMatches: SearchMatch[]  // 현재 열린 파일의 전체 match 목록
-
-  setQuery(q: string): void
-  setMode(m: 'string' | 'regex'): void
-  setScope(s: 'current' | 'all'): void
-  setResults(r: SearchResult[]): void
-  setSearching(b: boolean): void
-  setError(e: string | null): void
-  setActiveFile(filePath: string, matches: SearchMatch[]): void
-  setActiveMatchIndex(i: number): void
-  clearSearch(): void
-}
+Test Files  6 passed (6)
+     Tests  41 passed (41)   (M2 대비 +20)
+  Duration  ~200ms
 ```
 
 ---
 
-### Task 3: SearchPanel UI
+## Session Continuity Note
 
-**Files to modify:**
-- `src/renderer/src/components/Search/SearchPanel.tsx` — 전체 구현
+M4 시작 전 필독:
 
-**UI 구성 (세로 배치):**
-```
-┌─────────────────────┐
-│ 검색           [×]  │  ← 제목 + 초기화
-├─────────────────────┤
-│ [검색어 입력______] │  ← input, onKeyDown Enter
-│ ○ 현재  ○ 전체      │  ← scope radio
-│ ○ 문자열  ○ Regex   │  ← mode radio
-│ [검색]              │  ← 버튼 (Enter도 동작)
-├─────────────────────┤
-│ 결과 3개            │  ← 결과 개수 헤더
-├─────────────────────┤
-│ InventorySystem.md  │  ← 파일명 bold
-│ /path/to/file.md    │  ← 경로 muted xs
-│ ...inventory sys... │  ← 컨텍스트 스니펫 (첫 3개 match)
-│ 5 matches           │  ← match 개수 badge
-│ ─────────────       │
-│ ...                 │
-└─────────────────────┘
-```
-
-**구현 주의:**
-- 결과 스크롤 영역은 `overflow-y-auto` + 고정 높이 (flex-1)
-- 검색 결과 클릭 → `viewerStore.setFile(path, content)` + `searchStore.setActiveFile(path, allMatches)`
-- 파일 로드는 `window.api.readFile(result.filePath)` 후 viewerStore.setFile
-
----
-
-### Task 4: In-viewer 검색 하이라이트
-
-**방법: rehype 플러그인 방식 (권장)**
-
-`MarkdownRenderer.tsx`에 `activeFilePath` + `activeFileMatches` 구독 추가. 매치가 있는 경우 커스텀 rehype 플러그인으로 텍스트 노드에서 match 위치에 `<mark>` 삽입.
-
-**대안 (더 간단): DOM 직접 조작**
-뷰어 렌더 완료 후 `useEffect`에서 `document.querySelectorAll` + `Range` + `mark` 태그 삽입. 단 React reconciler와 충돌 가능 → 권장하지 않음.
-
-**권장 구현:**
-```ts
-// rehype-mark-search.ts (custom rehype plugin)
-// AST를 순회하며 text 노드에서 searchMatches에 해당하는 텍스트를 <mark> 로 래핑
-// activeMatchIndex에 해당하는 mark는 class="mark-current" 추가
-```
-
-CSS:
-```css
-mark { background: var(--color-yellow)/40; border-radius: 2px; }
-mark.mark-current { background: var(--color-orange)/70; outline: 1px solid var(--color-orange); }
-```
-
-**자동 스크롤:** 현재 match mark 요소에 `element.scrollIntoView({ block: 'center' })`
-
----
-
-### Task 5: In-viewer 네비게이션 UI
-
-**Files to modify:**
-- `src/renderer/src/components/Viewer/DocHeader.tsx` — 검색 활성화 시 네비게이션 UI 추가
-
-```
-┌─────────────────────────────────────────┐
-│ ← →  FileName.md   [2/5] [↑] [↓]  [×] │
-└─────────────────────────────────────────┘
-```
-
-- `[2/5]` — 현재 match / 전체 match 개수
-- `[↑] [↓]` — 이전/다음 match (searchStore.setActiveMatchIndex)
-- `[×]` — 검색 하이라이트 해제 (searchStore.clearSearch)
-- 검색으로 열린 문서가 아닐 때는 네비게이션 숨김
-
----
-
-### Task 6: Cmd+F 단축키
-
-**Files to modify:**
-- `src/renderer/src/App.tsx` — global keydown listener
-
-```ts
-useEffect(() => {
-  function onKey(e: KeyboardEvent) {
-    if (e.metaKey && e.key === 'f') {
-      e.preventDefault()
-      useUiStore.getState().setSidebarTab('search')
-      // focus search input — searchStore에 focusSearch() 액션 또는 커스텀 이벤트
-    }
-  }
-  window.addEventListener('keydown', onKey)
-  return () => window.removeEventListener('keydown', onKey)
-}, [])
-```
-
-SearchPanel input focus: `useEffect(() => { if (sidebarTab === 'search') inputRef.current?.focus() }, [sidebarTab])`
-
----
-
-## Pre-implemented Items
-
-- Sidebar 검색 탭 아이콘/라우팅 ✅
-- SearchPanel 컴포넌트 파일 존재 (스텁) ✅
-- IPC 채널/핸들러 구조 ✅
-- viewerStore.setFile() + loadFile() 분리 ✅
-
----
-
-## Test Plan
-
-- `tests/unit/search.test.ts` — 순수 함수 단위 테스트:
-  - 문자열 검색: 정확한 match 위치/컨텍스트
-  - Regex 검색: 패턴 매칭
-  - 빈 쿼리: 결과 없음
-  - 잘못된 regex: error 반환
-  - 대소문자 처리 (default: case-insensitive)
-- Integration: IPC `search-files` 핸들러 (실제 임시 파일 생성 후 검색)
-
----
-
-## Gotchas
-
-**Zustand 전체 구독 금지** (LESSONS_LEARNED 2026-05-27)
-SearchPanel과 DocHeader에서 searchStore 구독 시 반드시 개별 selector 사용.
-`useSearchStore()` (no selector) → searchStore 변경마다 리렌더 → 렌더링 불안정.
-
-**ReactMarkdown components useMemo** (LESSONS_LEARNED 2026-05-27)
-rehype-mark-search 플러그인을 MarkdownRenderer에 추가할 때, `remarkPlugins`/`rehypePlugins` 배열도 렌더마다 새 참조면 컴포넌트 언마운트 발생. `useMemo` deps에 activeMatchIndex 포함 주의 — match 이동마다 전체 MD 재파싱 발생.
-→ 하이라이트는 rehype 플러그인보다 **DOM mark 오버레이 방식**이 성능상 유리할 수 있음. 구현 중 성능 이슈 시 전환 고려.
-
-**rehype 플러그인에서 line-based match 적용의 어려움**
-rehype AST는 줄 번호 정보가 없음. match를 텍스트 오프셋 기반으로 처리해야 함.
-대안: 렌더 후 DOM에서 `TreeWalker`로 텍스트 노드 순회 + Range 객체로 mark 삽입. React state 업데이트 없이 DOM 직접 조작이지만 viewer 자체는 건드리지 않아 reconciler 충돌 최소화.
-
-**Electron main process 파일 검색 성능**
-동기 fs 연산은 main process에서 UI를 블록하지 않음 (renderer와 별개 process). 단 수천 개 파일 프로젝트에서는 IPC 응답 시간 길어질 수 있음. 필요 시 `setImmediate` chunking 또는 결과 스트리밍 (IPC event emit) 고려.
-
-**Regex 보안**
-사용자 입력 regex를 `new RegExp(query)` 로 그대로 사용하면 ReDoS 가능. Electron main에서만 실행되므로 DoS는 자기 자신에게만 영향. 단 catastrophic backtracking으로 UI 멈춤 방지를 위해 timeout wrapper 고려.
+- `src/main/analyzer.ts` — M1 이후 미수정. 단순 규칙 기반 (first-match 방식). Confidence 없음.
+- M4 목표: `project-detection-planning.md`의 Phase 1 구현 — Confidence 점수 + DependencyAnalyzer + 기술 스택 목록.
+- `ProjectType`은 DB 저장됨 (`src/main/db/schema.ts`). M4 타입 확장 시 DB 마이그레이션 필요 여부 검토.
+- `TitleBar.tsx`에서 `project.type` + `project.icon` 표시. M4 후 frameworks[] 목록 추가 예정.
+- Unity 전용 폴더 제외 로직 (`Library`, `Temp` 등)은 `src/main/fs.ts`에 있음 — M4 탐지 결과와 연계 가능.
+- LESSONS_LEARNED.md M3 신규 항목: TreeWalker live NodeList 회피, RegExp lastIndex 오염, useMemo 배열 필수.

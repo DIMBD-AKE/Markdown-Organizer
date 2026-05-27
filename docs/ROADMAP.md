@@ -83,26 +83,73 @@
 
 ---
 
-## M3 · 검색 기능 🔍 `feat/m3-search`
+## M3 · 검색 기능 🔍 `feat/m3-search` ✅
 
 > 빠른 문서 탐색. Sidebar "검색" 탭 완성.
 
+**Completed: 2026-05-27 11:00** | Work-log: `docs/work-logs/2026-05-27-milestone-3-search.md`
+
+### 완료 항목
+
+**IPC 검색 엔진**
+- [x] `src/main/ipc/search.ts` — `collectMdFiles` + `searchInLoadedFiles` 순수 함수 + IPC 핸들러
+- [x] `.md` + `.markdown` 확장자 지원
+- [x] 문자열/Regex 양 모드, 대소문자 무시 (`gi` 플래그)
+- [x] 와일드카드 지원: `*` → `.*`, `?` → `.` (string 모드)
+- [x] async `Promise.allSettled` 병렬 파일 읽기 (성능 최적화)
+- [x] invalid regex → `{ error: 'invalid_regex' }` 반환
+- [x] matchCount 내림차순 정렬, 미리보기 최대 3개
+
+**상태 관리**
+- [x] `searchStore.ts` — query/mode/scope/results/isSearching/error + in-viewer 하이라이트 상태
+- [x] `totalMatchCount` — DOM 탐색으로 발견한 실제 매칭 수 (DocHeader 카운터용)
+
+**SearchPanel UI**
+- [x] 검색어 입력 (Enter 실행), scope 라디오 (현재/전체), mode 라디오 (문자열/Regex)
+- [x] 결과 목록: 프로젝트 이름 + 컨텍스트 스니펫 + `N건 일치` 배지
+- [x] 결과 클릭 → 파일 열기 + 뷰어 하이라이트 활성화
+- [x] 빈 검색어 / 결과 없음 / 오류 / 로딩 상태 처리
+- [x] Cmd+F / Ctrl+F 전역 단축키 → 검색 탭 포커스
+
+**In-viewer 하이라이트**
+- [x] DOM TreeWalker + DocumentFragment으로 `<mark class="search-mark">` 삽입
+- [x] 현재 매칭: `mark-current` 클래스 (amber 강조) + auto-scroll
+- [x] 매칭 변경 시 reconciler 충돌 없는 순수 DOM 조작
+- [x] `clearMarks` — unique parent Set 기반 `normalize()` (O(n) 최적화)
+
+**DocHeader 내비게이션**
+- [x] `[N/M] [↑] [↓] [×]` — 검색 활성 시 표시
+- [x] Zustand 전체 구독 버그도 함께 수정 (DocHeader 리렌더 최적화)
+
+**테스트**
+- [x] 41/41 통과 (search.test.ts 20개 포함: string/regex/wildcard/empty/error/sort)
+
+**Handoff Note (2026-05-27 11:00):**
+검색 기능 완전 구현. IPC → Store → UI → 뷰어 하이라이트 → DocHeader 내비게이션 전 파이프라인 동작. 핵심 패턴: TreeWalker로 텍스트 노드 먼저 수집 후 mark 삽입(live NodeList 회피), remarkPlugins/rehypePlugins 배열 useMemo 필수(MarkdownRenderer 리마운트 방지), Zustand 개별 selector 필수(DocHeader에도 동일 적용). M4는 프로젝트 탐지 시스템 고도화 — `docs/project-detection-planning.md` + `src/main/analyzer.ts` 참고.
+
+---
+
+## M4 · 프로젝트 탐지 고도화 🔎 `feat/m4-detection`
+
+> `analyzer.ts`의 단순 규칙 → Confidence 기반 다중 기술 스택 탐지 시스템.
+
 ### 예정 항목
 
-**전체 텍스트 검색**
-- [ ] 파일 내용 기반 검색 (현재 프로젝트 범위)
-- [ ] 결과 미리보기 (매칭 컨텍스트 1–2줄)
-- [ ] 결과 클릭 → 해당 문서 열기
+**탐지 엔진**
+- [ ] Confidence 점수 시스템 (Evidence 기반 합산)
+- [ ] Phase 1 기술 스택: Unity, Unreal, Godot / React, Vue, Next.js, Angular, Svelte, Astro / Electron, Tauri / Express, NestJS, Spring Boot, Django, Flask, FastAPI / Flutter, React Native / Jupyter, PyTorch / Docker
+- [ ] DependencyAnalyzer: `package.json`, `.csproj`, `requirements.txt`, `Cargo.toml` 파싱
+- [ ] 빌드 시스템 탐지: Vite, Webpack, Gradle, Maven, Cargo, CMake
+- [ ] 패키지 매니저 탐지: npm/yarn/pnpm/bun/NuGet/cargo
+- [ ] Monorepo 기초 탐지: Nx, Turborepo, pnpm/yarn workspace
 
-**파일명 / Heading 검색**
-- [ ] 파일명 퍼지 검색
-- [ ] Heading 검색 (`# H1`, `## H2` 추출)
-- [ ] 결과 내 검색어 하이라이트
+**결과 구조 확장**
+- [ ] `primaryType` + `frameworks[]` + `confidence` + `evidence[]` + `warnings[]`
+- [ ] 기존 `ProjectType` 호환 유지 (DB 스키마 변경 없음)
 
-**UX**
-- [ ] `Cmd+F` 단축키로 검색 패널 열기
-- [ ] 검색 히스토리 (최근 N개)
-- [ ] 인덱싱 상태 표시 (대규모 프로젝트 대응)
+**UI 반영**
+- [ ] TitleBar 배지: 기술 스택 목록 표시 (React · Vite · Electron)
+- [ ] 신뢰도 낮음 경고 (confidence < 50 시 `?` 배지)
 
 ---
 
