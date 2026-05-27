@@ -3,6 +3,12 @@ import type { Project, ProjectState, FileNode, AppState, SearchQuery, SearchResu
 declare global {
   interface Window {
     api: {
+      platform: NodeJS.Platform
+
+      closeWindow(): Promise<void>
+      minimizeWindow(): Promise<void>
+      toggleMaximize(): Promise<void>
+
       selectFolder(): Promise<string | null>
       addProject(folderPath: string): Promise<Project>
       removeProject(id: string): Promise<void>

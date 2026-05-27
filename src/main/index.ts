@@ -18,6 +18,10 @@ function createWindow(): BrowserWindow {
     minHeight: 600,
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 12, y: 12 },
+    // Windows: native control overlay (min/max/close) at 40px height matching h-10
+    ...(process.platform === 'win32' ? {
+      titleBarOverlay: { color: '#1e1e2e', symbolColor: '#cdd6f4', height: 40 }
+    } : {}),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),
       contextIsolation: true,

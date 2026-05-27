@@ -4,11 +4,12 @@
 
 LLM(ChatGPT, Claude, Gemini)을 매일 쓰는 개발자를 위한 멀티 프로젝트 Markdown 관리 도구. 단순 뷰어가 아니라 프로젝트 단위로 문서를 탐색·관리하는 진지한 도구.
 
+[![Release](https://img.shields.io/github/v/release/DIMBD-AKE/Markdown-Organizer?label=release)](https://github.com/DIMBD-AKE/Markdown-Organizer/releases/latest)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
-![Electron](https://img.shields.io/badge/Electron-31-47848F?logo=electron)
-![React](https://img.shields.io/badge/React-18-61DAFB?logo=react)
+![Electron](https://img.shields.io/badge/Electron-31-47848F?logo=electron&logoColor=white)
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
 
-![screenshot](sample.png)
+<img src="sample.png" alt="screenshot" width="900">
 
 ---
 
@@ -148,4 +149,14 @@ git push origin v1.0.0
 | macOS | DMG | x64, arm64 |
 | Windows | NSIS 인스톨러, Portable exe | x64 |
 | Linux | AppImage | x64 |
+
+### macOS 첫 실행 시
+
+코드사이닝 인증서 없이 배포되므로 Gatekeeper가 차단할 수 있습니다. 터미널에서 아래 명령 실행 후 열어주세요.
+
+```bash
+xattr -cr ~/Downloads/Markdown\ Organizer-*.dmg
+# 또는 앱 번들을 직접:
+xattr -cr /Applications/Markdown\ Organizer.app
+```
 

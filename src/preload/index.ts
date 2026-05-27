@@ -2,6 +2,12 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { IPC } from '../main/ipc/channels'
 
 contextBridge.exposeInMainWorld('api', {
+  platform: process.platform as NodeJS.Platform,
+
+  closeWindow: () => ipcRenderer.invoke(IPC.CLOSE_WINDOW),
+  minimizeWindow: () => ipcRenderer.invoke(IPC.MINIMIZE_WINDOW),
+  toggleMaximize: () => ipcRenderer.invoke(IPC.TOGGLE_MAXIMIZE),
+
   selectFolder: () => ipcRenderer.invoke(IPC.SELECT_FOLDER),
   addProject: (folderPath: string) => ipcRenderer.invoke(IPC.ADD_PROJECT, folderPath),
   removeProject: (id: string) => ipcRenderer.invoke(IPC.REMOVE_PROJECT, id),

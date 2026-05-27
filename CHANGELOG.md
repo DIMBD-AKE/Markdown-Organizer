@@ -2,6 +2,19 @@
 
 All notable changes to Markdown Organizer are documented here.
 
+## [1.1.1] — 2026-05-27
+
+### Fixed
+- **창 컨트롤 복원** — Windows: `titleBarOverlay` 추가로 네이티브 최소화/최대화/닫기 버튼 표시. Linux: TitleBar에 커스텀 최소화/최대화/닫기 버튼 구현 (IPC 기반). macOS는 기존 트래픽 라이트 유지.
+- **Windows 렉 근본 제거** — `buildFileTree` 전체를 `fs.promises` 비동기로 재작성. 프로젝트 오픈 시 main 프로세스 이벤트 루프 블로킹 해소. `readFileSync` 도 v1.1.0에서 비동기 전환 완료.
+- **macOS ad-hoc 코드사이닝 강화** — `afterPack` 훅에서 `execSync`(셸 경유) → `spawnSync`(인자 배열, 셸 미사용)로 교체. 공백 포함 앱 경로 처리 안정화.
+- **릴리즈 Draft 잔존 해소** — CI 재설계: `create-release` 잡이 CHANGELOG 내용을 릴리즈 노트로 삼아 즉시 published 상태로 생성. `build` 잡은 `--publish never`로 빌드 후 `.dmg`/`.exe`/`.AppImage`만 수동 업로드 — `blockmap`, `latest.yml` 등 메타데이터 파일 업로드 제거.
+- **macOS Gatekeeper 안내** — README에 `xattr -cr` 첫 실행 가이드 추가.
+
+### Changed
+- TitleBar: macOS에서만 좌측 80px 여백 적용 (Windows/Linux에서 불필요한 공간 제거).
+- `buildFileTree` 반환 타입 `Promise<FileNode>`로 변경 (내부 호출처 영향 없음 — IPC 핸들러가 이미 async).
+
 ## [1.1.0] — 2026-05-27
 
 ### Fixed

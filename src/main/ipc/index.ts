@@ -3,6 +3,7 @@ import { registerFileHandlers } from './files'
 import { registerSettingsHandlers } from './settings'
 import { registerSearchHandlers } from './search'
 import { registerUpdaterHandlers } from './updater'
+import { registerWindowHandlers } from './window'
 
 export function registerAllHandlers(): void {
   registerProjectHandlers()
@@ -10,4 +11,5 @@ export function registerAllHandlers(): void {
   registerSettingsHandlers()
   registerSearchHandlers()
   registerUpdaterHandlers()
+  registerWindowHandlers()
 }

@@ -31,6 +31,7 @@ export default function TitleBar() {
   const [open, setOpen] = useState(false)
   const activeProject = projects.find((p) => p.id === activeProjectId)
   const activeTypeLabel = activeProject ? TYPE_LABEL[activeProject.type] : undefined
+  const platform = window.api.platform
 
   async function selectProject(id: string, projPath: string) {
     useViewerStore.getState().clearForProjectSwitch()
@@ -91,8 +92,8 @@ export default function TitleBar() {
       style={dragStyle}
       className="h-10 flex-shrink-0 flex items-center bg-mantle border-b border-surface0"
     >
-      {/* Traffic light clearance (~80px) */}
-      <div className="w-[80px] flex-shrink-0" />
+      {/* macOS: 80px clearance for traffic lights */}
+      {platform === 'darwin' && <div className="w-[80px] flex-shrink-0" />}
 
       {/* Project selector */}
       <div style={noDragStyle} className="flex items-center gap-2">
@@ -187,7 +188,7 @@ export default function TitleBar() {
       <div className="flex-1" />
 
       <div style={noDragStyle} className="flex items-center gap-1 pr-3">
-        {/* Open active project in Finder */}
+        {/* Open active project in Finder/Explorer */}
         {activeProject && (
           <button
             onClick={handleOpenInFinder}
@@ -201,6 +202,36 @@ export default function TitleBar() {
         )}
         <ThemeToggle />
       </div>
+
+      {/* Linux: custom window controls (no native overlay support) */}
+      {platform === 'linux' && (
+        <div style={noDragStyle} className="flex items-stretch h-full ml-1">
+          <button
+            onClick={() => window.api.minimizeWindow()}
+            title="최소화"
+            className="w-10 flex items-center justify-center text-overlay0 hover:text-text hover:bg-surface0/60 transition-colors text-sm"
+          >
+            ─
+          </button>
+          <button
+            onClick={() => window.api.toggleMaximize()}
+            title="최대화"
+            className="w-10 flex items-center justify-center text-overlay0 hover:text-text hover:bg-surface0/60 transition-colors text-xs"
+          >
+            ▢
+          </button>
+          <button
+            onClick={() => window.api.closeWindow()}
+            title="닫기"
+            className="w-10 flex items-center justify-center text-overlay0 hover:text-red hover:bg-red/10 transition-colors text-sm"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Windows: spacer so content doesn't bleed under the native titlebar overlay (~138px) */}
+      {platform === 'win32' && <div className="w-[138px] flex-shrink-0" />}
     </header>
   )
 }

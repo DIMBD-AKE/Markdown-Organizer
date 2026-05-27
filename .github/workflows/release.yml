@@ -8,7 +8,36 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  # ── 1. Create the GitHub Release with CHANGELOG notes ─────────────────────
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          python3 - "$VERSION" << 'PYEOF'
+          import re, sys
+          version = sys.argv[1]
+          content = open('CHANGELOG.md').read()
+          pattern = r'## \[' + re.escape(version) + r'\][^\n]*\n(.*?)(?=\n## \[|\Z)'
+          match = re.search(pattern, content, re.DOTALL)
+          notes = match.group(1).strip() if match else f'Release v{version}'
+          open('/tmp/release_notes.md', 'w').write(notes)
+          PYEOF
+
+      - name: Create GitHub Release
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "$GITHUB_REF_NAME" \
+            --notes-file /tmp/release_notes.md
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ── 2. Build per platform, upload only main artifact ──────────────────────
+  build:
+    needs: create-release
     strategy:
       fail-fast: false
       matrix:
@@ -39,9 +68,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build and publish
-        run: npm run ${{ matrix.build_cmd }} -- --publish always
+      - name: Build
+        run: npm run ${{ matrix.build_cmd }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          # No GH_TOKEN here — prevents electron-builder from auto-publishing
+
+      - name: Upload artifacts to release
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            find dist -name "*.dmg" | while IFS= read -r f; do
+              gh release upload "$GITHUB_REF_NAME" "$f" --clobber
+            done
+          elif [ "$RUNNER_OS" = "Windows" ]; then
+            find dist -maxdepth 1 -name "*.exe" | while IFS= read -r f; do
+              gh release upload "$GITHUB_REF_NAME" "$f" --clobber
+            done
+          else
+            find dist -name "*.AppImage" | while IFS= read -r f; do
+              gh release upload "$GITHUB_REF_NAME" "$f" --clobber
+            done
+          fi
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # No Apple Developer ID — ad-hoc signing applied via afterPack hook.
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'

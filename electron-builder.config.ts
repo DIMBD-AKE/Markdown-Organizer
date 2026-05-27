@@ -1,5 +1,5 @@
 import { defineConfig } from 'electron-builder'
-import { execSync } from 'child_process'
+import { spawnSync } from 'child_process'
 
 export default defineConfig({
   appId: 'com.markdown-organizer.app',
@@ -9,15 +9,18 @@ export default defineConfig({
   files: ['out/**'],
   asarUnpack: ['**/node_modules/better-sqlite3/**/*', '**/node_modules/bindings/**/*'],
 
-  // Ad-hoc sign on macOS so Gatekeeper doesn't block with "damaged app" on arm64.
-  // Runs after pack, before DMG creation. No Apple Developer ID required.
+  // Ad-hoc sign on macOS before DMG creation.
+  // Reduces Gatekeeper "damaged app" probability on arm64 unsigned builds.
+  // Note: notarization still required for full bypass; users may need xattr -cr on first launch.
   afterPack: async (context) => {
     if (context.electronPlatformName !== 'darwin') return
     const appPath = `${context.appOutDir}/${context.packager.appInfo.productFilename}.app`
-    try {
-      execSync(`codesign --force --deep --sign - "${appPath}"`, { stdio: 'inherit' })
-    } catch {
-      console.warn('[afterPack] Ad-hoc signing failed — continuing without signature')
+    console.log(`[afterPack] ad-hoc signing: ${appPath}`)
+    const result = spawnSync('codesign', ['--force', '--deep', '--sign', '-', appPath], {
+      stdio: 'inherit',
+    })
+    if (result.status !== 0) {
+      console.warn(`[afterPack] codesign exited ${result.status} — continuing unsigned`)
     }
   },
 
