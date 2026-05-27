@@ -43,11 +43,11 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            build_cmd: build:mac
+            build_cmd: release:mac
           - os: windows-latest
-            build_cmd: build:win
+            build_cmd: release:win
           - os: ubuntu-latest
-            build_cmd: build:linux
+            build_cmd: release:linux
 
     runs-on: ${{ matrix.os }}
 
@@ -72,7 +72,6 @@ jobs:
         run: npm run ${{ matrix.build_cmd }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
-          # No GH_TOKEN here — prevents electron-builder from auto-publishing
 
       - name: Upload artifacts to release
         shell: bash
