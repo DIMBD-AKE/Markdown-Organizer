@@ -129,27 +129,72 @@
 
 ---
 
-## M4 · 프로젝트 탐지 고도화 🔎 `feat/m4-detection`
+## M4 · 프로젝트 탐지 고도화 🔎 `feat/m4-detection` ✅
 
 > `analyzer.ts`의 단순 규칙 → Confidence 기반 다중 기술 스택 탐지 시스템.
 
-### 예정 항목
+**Completed: 2026-05-27 15:00** | Work-log: `docs/work-logs/2026-05-27-milestone-4-detection.md`
 
-**탐지 엔진**
-- [ ] Confidence 점수 시스템 (Evidence 기반 합산)
-- [ ] Phase 1 기술 스택: Unity, Unreal, Godot / React, Vue, Next.js, Angular, Svelte, Astro / Electron, Tauri / Express, NestJS, Spring Boot, Django, Flask, FastAPI / Flutter, React Native / Jupyter, PyTorch / Docker
-- [ ] DependencyAnalyzer: `package.json`, `.csproj`, `requirements.txt`, `Cargo.toml` 파싱
-- [ ] 빌드 시스템 탐지: Vite, Webpack, Gradle, Maven, Cargo, CMake
-- [ ] 패키지 매니저 탐지: npm/yarn/pnpm/bun/NuGet/cargo
-- [ ] Monorepo 기초 탐지: Nx, Turborepo, pnpm/yarn workspace
+### 완료 항목
+
+**탐지 엔진 (`src/main/detector/`)**
+- [x] Confidence 점수 시스템 (Evidence 기반 합산, 72개 룰)
+- [x] 72개 룰: GameEngine×5 (Unity/Unreal/Godot/GameMaker/RPGMaker), Desktop×4, Frontend×12, Backend×14, Mobile×4, AI×5, DevOps×4, Monorepo×3, Docs×5, Language×16
+- [x] DependencyAnalyzer: package.json, requirements.txt, pyproject.toml, Cargo.toml, .csproj
+- [x] 빌드 시스템 탐지: Vite, Webpack, Turbopack, Maven, Gradle, MSBuild, CMake
+- [x] 패키지 매니저 탐지: npm/yarn/pnpm/bun/cargo
+- [x] Monorepo 탐지: Nx, Turborepo, Lerna
 
 **결과 구조 확장**
-- [ ] `primaryType` + `frameworks[]` + `confidence` + `evidence[]` + `warnings[]`
-- [ ] 기존 `ProjectType` 호환 유지 (DB 스키마 변경 없음)
+- [x] `primaryType` + `frameworks[]` + `confidence` + `evidence[]` + `warnings[]`
+- [x] 기존 `ProjectType` 호환 유지 (DB 스키마 변경 없음)
+- [x] 새 ProjectType: go, java, php, ruby, dart, cpp, csharp
 
 **UI 반영**
-- [ ] TitleBar 배지: 기술 스택 목록 표시 (React · Vite · Electron)
-- [ ] 신뢰도 낮음 경고 (confidence < 50 시 `?` 배지)
+- [x] TitleBar: frameworks 배지 목록 (최대 3개 + N개 초과 표시)
+- [x] confidence < 50 → `?` 배지
+- [x] GET_APP_STATE: 스타트업 시 모든 기존 프로젝트 재분석
+
+**테스트**
+- [x] 26개 detector 통합 테스트, 67/67 전체 통과
+
+**Handoff Note (2026-05-27 15:00):**
+Confidence 기반 72룰 탐지 시스템 완전 구현. `src/main/detector/`가 독립 모듈로 존재하며 `src/main/analyzer.ts`는 레거시로 유지(구버전 테스트 참조). GET_APP_STATE가 스타트업 시 모든 프로젝트 재분석하므로 frameworks는 항상 최신. M5는 배포 준비 — `build/` 디렉토리 비어있고 `electron-builder.config.ts` 기본 구조만 존재. work-log: `docs/work-logs/2026-05-27-milestone-4-detection.md`
+
+---
+
+## M5 · 배포 준비 📦 `feat/m5-deploy`
+
+> Windows / macOS / Linux 3개 플랫폼 패키징 + 자동 업데이트 + CI/CD.
+
+### 예정 항목
+
+**아이콘 & 앱 메타데이터**
+- [ ] 앱 아이콘 제작: icon.icns (macOS), icon.ico (Windows), icon.png (Linux) → `build/` 배치
+- [ ] electron-builder.config.ts 완성: appId, copyright, productName, category
+- [ ] package.json 메타: author, homepage, repository
+
+**macOS**
+- [ ] DMG 설정: background 이미지, window 레이아웃
+- [ ] 코드사이닝: Apple Developer ID 환경변수 설정 (CSC_LINK, CSC_KEY_PASSWORD)
+- [ ] Notarization: APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID
+
+**Windows**
+- [ ] NSIS 인스톨러 설정: one-click, perMachine, shortcuts
+- [ ] 코드사이닝 (선택): EV 인증서 환경변수
+
+**Linux**
+- [ ] AppImage + deb 설정
+- [ ] desktop 파일: 카테고리, 설명, MIME 타입
+
+**자동 업데이트**
+- [ ] `electron-updater` 추가
+- [ ] GitHub Releases 기반 업데이트 채널
+- [ ] 업데이트 확인 UI (설정 패널)
+
+**CI/CD (GitHub Actions)**
+- [ ] `.github/workflows/release.yml`: tag push → 3개 플랫폼 병렬 빌드 → GitHub Release 업로드
+- [ ] 빌드 캐시 최적화 (node_modules, electron 바이너리)
 
 ---
 

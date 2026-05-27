@@ -1,5 +1,15 @@
 # Lessons Learned
 
+---
+
+## Rule 점수 합산 시 기본 가정 검증 필수 — 2026-05-27
+
+**Symptom:** Electron+React 복합 프로젝트 테스트에서 Electron이 더 높은 점수일 것으로 가정했으나 React가 더 높음.
+
+**Root cause:** React 룰에 `*.tsx` glob(+20) + `src/App.tsx` fileExists(+15) + `package.json`(+10) 있어서, 테스트 픽스처에 해당 파일 모두 생성하면 React = 100점, Electron = 90점.
+
+**Correct fix:** 점수 기반 탐지 테스트에서 순서 assertion 대신 포함 여부만 검증. 순서가 중요하면 테스트 픽스처에서 특정 파일을 의도적으로 제외해야 함.
+
 > 반복하지 말아야 할 실수, 검증된 패턴.
 
 ---
