@@ -29,7 +29,7 @@ export default defineConfig({
   },
 
   win: {
-    target: [{ target: 'nsis', arch: ['x64', 'arm64'] }],
+    target: [{ target: 'nsis', arch: ['x64'] }],
     icon: 'build/icon.png',
   },
   nsis: {

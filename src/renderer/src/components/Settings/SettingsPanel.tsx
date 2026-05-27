@@ -45,7 +45,7 @@ export default function SettingsPanel() {
   const updateLabel: Record<UpdateStatus, string> = {
     idle: '업데이트 확인',
     checking: '확인 중...',
-    available: '다운로드 중...',
+    available: '업데이트 발견',
     'not-available': '최신 버전',
     downloading: '다운로드 중...',
     ready: '재시작하여 설치',
