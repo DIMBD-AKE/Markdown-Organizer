@@ -3,7 +3,7 @@ import { defineConfig } from 'electron-builder'
 export default defineConfig({
   appId: 'com.markdown-organizer.app',
   productName: 'Markdown Organizer',
-  copyright: `Copyright © ${new Date().getFullYear()} 이드림`,
+  copyright: `Copyright © ${new Date().getFullYear()} DIMBD-AKE`,
   directories: { buildResources: 'build', output: 'dist' },
   files: ['out/**'],
   asarUnpack: ['**/node_modules/better-sqlite3/**/*', '**/node_modules/bindings/**/*'],

@@ -4,7 +4,7 @@
   "description": "Desktop app for managing AI-generated Markdown documents",
   "main": "./out/main/index.js",
   "author": {
-    "name": "이드림",
+    "name": "DIMBD-AKE",
     "email": "dream70521@gmail.com"
   },
   "homepage": "https://github.com/DIMBD-AKE/Markdown-Organizer",
