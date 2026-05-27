@@ -41,13 +41,10 @@ export default defineConfig({
   },
 
   linux: {
-    target: ['AppImage', 'deb'],
+    target: [{ target: 'AppImage', arch: ['x64'] }],
     icon: 'build/icon.png',
     category: 'Office',
     description: 'Desktop app for managing AI-generated Markdown documents',
     executableName: 'markdown-organizer',
-  },
-  deb: {
-    depends: ['libgtk-3-0', 'libnotify4', 'libnss3', 'libxss1', 'libxtst6', 'xdg-utils', 'libatspi2.0-0', 'libdrm2', 'libgbm1'],
   },
 })
