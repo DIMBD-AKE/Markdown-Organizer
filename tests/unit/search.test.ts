@@ -173,6 +173,39 @@ describe('searchInFiles — string mode', () => {
   })
 })
 
+// ─── searchInFiles — wildcard mode ───────────────────────────────────────────
+
+describe('searchInFiles — wildcard (string mode)', () => {
+  it('* matches any sequence of characters', () => {
+    const files = collectMdFiles(tmpDir).filter(f => path.basename(f) === 'alpha.md')
+    // "hel*ld" should match "Hello world"
+    const result = searchInFiles(files, 'hel*ld', 'string')
+    expect('results' in result).toBe(true)
+    if (!('results' in result)) return
+    expect(result.results).toHaveLength(1)
+  })
+
+  it('? matches exactly one character', () => {
+    const files = collectMdFiles(tmpDir).filter(f => path.basename(f) === 'alpha.md')
+    // "hell?" matches "hello" (5 chars, ? covers the 'o')
+    const result = searchInFiles(files, 'hell?', 'string')
+    expect('results' in result).toBe(true)
+    if (!('results' in result)) return
+    expect(result.results).toHaveLength(1)
+    expect(result.results[0].matchCount).toBeGreaterThan(0)
+  })
+
+  it('literal * is not escaped as special regex char', () => {
+    // Without wildcard support the old code would escape * — now it should be treated as wildcard
+    const files = collectMdFiles(tmpDir).filter(f => path.basename(f) === 'alpha.md')
+    // "t*st" should match "test" and "this is a test"
+    const result = searchInFiles(files, 't*st', 'string')
+    expect('results' in result).toBe(true)
+    if (!('results' in result)) return
+    expect(result.results).toHaveLength(1)
+  })
+})
+
 // ─── searchInFiles — regex mode ───────────────────────────────────────────────
 
 describe('searchInFiles — regex mode', () => {

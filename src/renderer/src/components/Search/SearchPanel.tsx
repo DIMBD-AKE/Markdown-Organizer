@@ -3,7 +3,12 @@ import { useSearchStore } from '../../stores/searchStore'
 import { useProjectStore, activeProject } from '../../stores/projectStore'
 import { useViewerStore } from '../../stores/viewerStore'
 import { useUiStore } from '../../stores/uiStore'
-import type { SearchResult } from '../../types'
+import type { Project, SearchResult } from '../../types'
+
+function getProjectLabel(filePath: string, projects: Project[]): string {
+  const proj = projects.find(p => filePath.startsWith(p.path + '/') || filePath.startsWith(p.path + '\\'))
+  return proj?.name ?? filePath.split('/').slice(-2, -1)[0] ?? ''
+}
 
 export default function SearchPanel() {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -39,6 +44,7 @@ export default function SearchPanel() {
   const handleSearch = useCallback(async () => {
     const trimmed = query.trim()
     if (!trimmed) {
+      setResults([])
       setError('검색어를 입력해 주세요.')
       return
     }
@@ -51,6 +57,7 @@ export default function SearchPanel() {
         : projects.map((p) => p.path)
 
     if (projectPaths.length === 0) {
+      setResults([])
       setError('열린 프로젝트가 없습니다.')
       return
     }
@@ -96,7 +103,7 @@ export default function SearchPanel() {
     }
   }
 
-  const showClear = query.length > 0 || results.length > 0
+  const showClear = query.length > 0 || results.length > 0 || !!error
 
   return (
     <div className="flex flex-col w-full h-full bg-mantle border-r border-surface0 overflow-hidden">
@@ -225,14 +232,16 @@ export default function SearchPanel() {
                 onClick={() => handleResultClick(result)}
                 className="w-full text-left px-3 py-2 cursor-pointer hover:bg-surface0/40 border-b border-surface0/30 transition-colors"
               >
-                <div className="text-sm font-medium text-text">{result.fileName}</div>
-                <div className="text-[10px] text-overlay0 truncate">{result.filePath}</div>
+                <div className="text-sm font-semibold text-text">{result.fileName}</div>
+                <div className="text-[10px] text-overlay0 truncate" title={result.filePath}>
+                  {getProjectLabel(result.filePath, projects)}
+                </div>
                 {result.matches[0] && (
                   <div className="text-xs text-subtext0 mt-1 line-clamp-2">
                     {result.matches[0].lineText.trim()}
                   </div>
                 )}
-                <div className="text-[10px] text-amber mt-0.5">{result.matchCount} matches</div>
+                <div className="text-[10px] text-amber mt-0.5">{result.matchCount}건 일치</div>
               </button>
             ))}
           </>

@@ -16,6 +16,7 @@ interface Props { content: string; filePath: string }
 
 function clearMarks(container: HTMLElement): void {
   const marks = container.querySelectorAll('mark.search-mark')
+  const parents = new Set<Node>()
   marks.forEach(mark => {
     const parent = mark.parentNode
     if (!parent) return
@@ -23,20 +24,24 @@ function clearMarks(container: HTMLElement): void {
       parent.insertBefore(mark.firstChild, mark)
     }
     parent.removeChild(mark)
-    parent.normalize()
+    parents.add(parent)
   })
+  parents.forEach(p => (p as Element).normalize())
 }
 
 function buildHighlightRegex(query: string, mode: 'string' | 'regex'): RegExp | null {
   try {
     if (mode === 'string') {
-      const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-      return new RegExp(escaped, 'gi')
+      // Escape special chars except wildcards, then convert * → .* and ? → .
+      const escaped = query.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+      const withWildcards = escaped.replace(/\*/g, '.*').replace(/\?/g, '.')
+      return new RegExp(withWildcards, 'gi')
     } else {
       return new RegExp(query, 'gi')
     }
-  } catch {
-    return null
+  } catch (e) {
+    if (e instanceof SyntaxError) return null
+    throw e
   }
 }
 
@@ -132,10 +137,11 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
     setTotalMatchCount(marks.length)
 
     if (marks.length > 0) {
-      marks[0].classList.add('mark-current')
-      marks[0].scrollIntoView({ block: 'center', behavior: 'smooth' })
+      const initialIndex = Math.min(activeMatchIndex, marks.length - 1)
+      marks[initialIndex].classList.add('mark-current')
+      marks[initialIndex].scrollIntoView({ block: 'center', behavior: 'smooth' })
     }
-  }, [filePath, content, activeFilePath, searchQuery, searchMode, setTotalMatchCount])
+  }, [filePath, content, activeFilePath, activeMatchIndex, searchQuery, searchMode, setTotalMatchCount])
 
   // Effect 2 — Update current mark when index changes
   useEffect(() => {

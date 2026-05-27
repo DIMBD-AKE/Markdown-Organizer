@@ -24,45 +24,44 @@ export function collectMdFiles(dirPath: string): string[] {
   return results
 }
 
-// Pure function: search within a list of file paths
-export function searchInFiles(
-  filePaths: string[],
+// Build a search regex from query + mode. Supports wildcards (* and ?) in string mode.
+function buildSearchPattern(query: string, mode: 'string' | 'regex'): RegExp | { error: string } {
+  if (mode === 'regex') {
+    try {
+      return new RegExp(query, 'gi')
+    } catch (e) {
+      if (e instanceof SyntaxError) return { error: 'invalid_regex' }
+      throw e
+    }
+  }
+  // String mode: escape special regex chars except * and ?, then convert wildcards
+  const escaped = query.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+  const withWildcards = escaped.replace(/\*/g, '.*').replace(/\?/g, '.')
+  return new RegExp(withWildcards, 'gi')
+}
+
+// Core search logic on pre-loaded file contents — no I/O
+export function searchInLoadedFiles(
+  files: Array<{ filePath: string; content: string }>,
   query: string,
   mode: 'string' | 'regex'
 ): { results: SearchResult[] } | { error: string } {
-  if (!query) {
-    return { results: [] }
-  }
+  if (!query) return { results: [] }
 
-  let pattern: RegExp
-  if (mode === 'regex') {
-    try {
-      pattern = new RegExp(query, 'gi')
-    } catch {
-      return { error: 'invalid_regex' }
-    }
-  } else {
-    // Escape special regex chars for literal string search
-    const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    pattern = new RegExp(escaped, 'gi')
-  }
+  const patternOrError = buildSearchPattern(query, mode)
+  if ('error' in patternOrError) return patternOrError
+  const basePattern = patternOrError
 
   const results: SearchResult[] = []
 
-  for (const filePath of filePaths) {
-    let content: string
-    try {
-      content = fs.readFileSync(filePath, 'utf-8')
-    } catch {
-      continue
-    }
-
+  for (const { filePath, content } of files) {
+    // Fresh pattern instance per file to avoid lastIndex state bleed across files
+    const pattern = new RegExp(basePattern.source, basePattern.flags)
     const lines = content.split('\n')
     const matches: SearchMatch[] = []
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i]
-      // Reset lastIndex for global regex before each line
       pattern.lastIndex = 0
       let match: RegExpExecArray | null
       while ((match = pattern.exec(line)) !== null) {
@@ -72,10 +71,7 @@ export function searchInFiles(
           matchStart: match.index,
           matchEnd: match.index + match[0].length,
         })
-        // Avoid infinite loop on zero-length matches
-        if (match[0].length === 0) {
-          pattern.lastIndex++
-        }
+        if (match[0].length === 0) pattern.lastIndex++
       }
     }
 
@@ -89,26 +85,48 @@ export function searchInFiles(
     }
   }
 
-  // Sort by matchCount descending
   results.sort((a, b) => b.matchCount - a.matchCount)
-
   return { results }
+}
+
+// Sync wrapper for backward compatibility — used by unit tests
+export function searchInFiles(
+  filePaths: string[],
+  query: string,
+  mode: 'string' | 'regex'
+): { results: SearchResult[] } | { error: string } {
+  if (!query) return { results: [] }
+
+  const files: Array<{ filePath: string; content: string }> = []
+  for (const filePath of filePaths) {
+    try {
+      files.push({ filePath, content: fs.readFileSync(filePath, 'utf-8') })
+    } catch {
+      // skip unreadable files
+    }
+  }
+
+  return searchInLoadedFiles(files, query, mode)
 }
 
 // scope filtering is the renderer's responsibility — projectPaths must be pre-filtered by the caller
 export function registerSearchHandlers(): void {
-  ipcMain.handle(IPC.SEARCH_FILES, (_e, queryObj: SearchQuery) => {
+  ipcMain.handle(IPC.SEARCH_FILES, async (_e, queryObj: SearchQuery) => {
     const { query, mode, projectPaths } = queryObj
 
-    if (!query || !Array.isArray(projectPaths)) {
-      return { results: [] }
-    }
+    if (!query || !Array.isArray(projectPaths)) return { results: [] }
 
-    const allFiles: string[] = []
-    for (const projectPath of projectPaths) {
-      allFiles.push(...collectMdFiles(projectPath))
-    }
+    const allFilePaths: string[] = []
+    for (const p of projectPaths) allFilePaths.push(...collectMdFiles(p))
 
-    return searchInFiles(allFiles, query, mode)
+    // Parallel async reads — all files are fetched concurrently from the OS
+    const settled = await Promise.allSettled(
+      allFilePaths.map(async fp => ({ filePath: fp, content: await fs.promises.readFile(fp, 'utf-8') }))
+    )
+    const files = settled
+      .filter((r): r is PromiseFulfilledResult<{ filePath: string; content: string }> => r.status === 'fulfilled')
+      .map(r => r.value)
+
+    return searchInLoadedFiles(files, query, mode)
   })
 }
