@@ -60,18 +60,19 @@ Previous lessons learned relevant to this milestone:
 
 **시도 3 (v1.1.4 — 정답): `electron-builder.cjs`로 rename**
 - 변경: `electron-builder.config.cjs` → `electron-builder.cjs`
-- 결과: CI 확인 필요 (v1.1.4 태그 푸시됨, 2026-05-28).
+- 결과: ✅ portable exe 생성 확인됨 (v1.1.4, 2026-05-28).
 
 **교훈:**
 - electron-builder v24 config 파일명: `electron-builder.{yml|yaml|json|json5|toml|js|cjs|ts}` — `.config.` 접두사 없음.
 - `electron-builder.config.ts` 형식은 공식 문서 표기와 달리 electron-builder v24.13.3 내부 코드에서 탐색하지 않음.
 - config 로드 여부 확인법: CI 로그에서 타겟명 체크 (`target=nsis` → 기본값 → config 로드 실패).
 
-**구조적 한계 — 단일 exe 가능성:**
+**구조적 한계 — 단일 exe 가능성 및 실행 속도:**
 - `portable` 타겟은 electron-builder 공식 지원 타겟. 실행 시 임시 디렉터리에 압축 해제, 실행 후 삭제.
 - 완전한 "single file" exe (압축 해제 없이)는 Electron 아키텍처상 불가 — ASAR + native bindings(better-sqlite3)가 filesystem 필요.
 - `portable` = 사용자 관점에서 단일 실행 파일 (설치 불필요, 레지스트리 미수정) — 실질적으로 충분.
 - NSIS portable과 electron-builder portable의 차이: 전자는 NSIS 래퍼(설치 동작), 후자는 진짜 portable exe.
+- **실행 속도 느림 (보고됨, 2026-05-28)**: portable exe 특성상 매 실행마다 `%TEMP%\...` 에 압축 해제 후 실행. 빌드 크기가 클수록 느림. → Task 5 (빌드 용량 최적화)로 완화 가능. 구조적으로 완전 해소 불가.
 
 ---
 
