@@ -2,6 +2,46 @@
 
 ---
 
+## electron-builder CSC_LINK 빈값 → "not a file" 에러 — 2026-05-27
+
+**Symptom:** GitHub Actions release 워크플로에서 macOS 빌드 실패. `"CSC_LINK" is not a file`.
+
+**Root cause:** `CSC_LINK: ${{ secrets.CSC_LINK }}` — 시크릿 미설정 시 빈 문자열. electron-builder가 빈 문자열을 파일 경로로 해석.
+
+**Correct fix:** CSC 관련 env 전체 제거 + `CSC_IDENTITY_AUTO_DISCOVERY: 'false'` 추가. 코드사이닝 없이 빌드.
+
+---
+
+## electron-builder Linux deb → Snap Store 자동 publish 트리거 — 2026-05-27
+
+**Symptom:** `['AppImage', 'deb']` 타겟 빌드 시 snapcraft 미설치로 실패.
+
+**Root cause:** electron-builder 24.x가 deb 타겟 존재 시 Snap Store 자동 publish 시도.
+
+**Correct fix:** deb 제거, AppImage only (`{ target: 'AppImage', arch: ['x64'] }`).
+
+---
+
+## macOS DMG 빌더 `python` 경로 문제 — 2026-05-27
+
+**Symptom:** 로컬 macOS 빌드: `which python` 실패. Homebrew Python 3.14: `ImportError: dlopen(pyexpat...)`.
+
+**Root cause:** dmg-builder가 `python` 호출. 현대 macOS에 `python` 없음. Homebrew Python은 libexpat 버전 불일치.
+
+**Correct fix:** `scripts/python` 래퍼 → `/usr/bin/python3` (시스템 Python 3.9) + `build:mac` 스크립트에서 `PATH="$PWD/scripts:$PATH"` 앞에 추가.
+
+---
+
+## GitHub Release Draft 상태 — 워크플로 부분 실패 시 — 2026-05-27
+
+**Symptom:** 아티팩트는 업로드됐으나 Release가 Draft로 남음.
+
+**Root cause:** 워크플로 중간 단계 실패 → `draft: true` 상태에서 멈춤.
+
+**Correct fix:** `gh release edit v1.0.0 --draft=false`로 수동 publish. 또는 워크플로에 `draft: false` 명시.
+
+---
+
 ## Rule 점수 합산 시 기본 가정 검증 필수 — 2026-05-27
 
 **Symptom:** Electron+React 복합 프로젝트 테스트에서 Electron이 더 높은 점수일 것으로 가정했으나 React가 더 높음.
