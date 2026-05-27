@@ -12,6 +12,7 @@ export const IPC = {
   FILE_CHANGED:       'file-changed',
   START_WATCHER:      'start-watcher',
   OPEN_PATH:            'open-path',
+  OPEN_EXTERNAL:        'open-external',
   CLOSE_WINDOW:         'close-window',
   MINIMIZE_WINDOW:      'minimize-window',
   TOGGLE_MAXIMIZE:      'toggle-maximize',

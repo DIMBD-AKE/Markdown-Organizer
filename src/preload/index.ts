@@ -28,6 +28,7 @@ contextBridge.exposeInMainWorld('api', {
 
   startWatcher: (projectPath: string) => ipcRenderer.invoke(IPC.START_WATCHER, projectPath),
   openPath: (targetPath: string) => ipcRenderer.invoke(IPC.OPEN_PATH, targetPath),
+  openExternal: (url: string) => ipcRenderer.invoke(IPC.OPEN_EXTERNAL, url),
 
   searchFiles: (query: unknown) => ipcRenderer.invoke(IPC.SEARCH_FILES, query),
 

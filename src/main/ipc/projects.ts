@@ -6,6 +6,7 @@ import { getDb } from '../db'
 import { upsertProject, deleteProject, upsertProjectState } from '../db/queries'
 import { analyzeDirectory } from '../detector'
 import { startWatcher } from '../watcher'
+import { isAllowedExternalUrl } from '../url'
 import type { Project, ProjectState } from '../../renderer/src/types'
 
 export function registerProjectHandlers(): void {
@@ -47,5 +48,10 @@ export function registerProjectHandlers(): void {
 
   ipcMain.handle(IPC.OPEN_PATH, async (_e, targetPath: string) => {
     await shell.openPath(targetPath)
+  })
+
+  ipcMain.handle(IPC.OPEN_EXTERNAL, async (_e, url: string) => {
+    if (!isAllowedExternalUrl(url)) return
+    await shell.openExternal(url)
   })
 }
