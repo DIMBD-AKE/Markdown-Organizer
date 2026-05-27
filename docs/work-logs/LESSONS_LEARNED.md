@@ -2,6 +2,58 @@
 
 ---
 
+## electron-builder `onTagOrDraft` — GH_TOKEN 없어도 자동 publish 시도 — 2026-05-27
+
+**Symptom:** CI build step에서 `GH_TOKEN` 제거해도 `"artifacts will be published reason=tag is defined"` 로그 후 실패. Windows: `GitHub Personal Access Token is not set`. Linux: `snapcraft is not installed`.
+
+**Root cause:** electron-builder 기본 publish 모드는 `onTagOrDraft`. git tag가 존재하면 `--publish always` 없이도 자동 publish 시도.
+
+**Failed attempts:** build step env에서 `GH_TOKEN` 제거 — 효과 없음.
+
+**Correct fix:** 빌드 스크립트에 `--publish never` 명시. CI 전용 `release:mac/win/linux` 스크립트 생성.
+
+---
+
+## CSP `img-src`에 `file:` 누락 — 로컬 이미지 전부 차단 — 2026-05-28
+
+**Symptom:** 뷰어에서 로컬 마크다운의 `![]` 이미지 전부 렌더 불가. `file://` URL 생성 로직은 정상.
+
+**Root cause:** `src/renderer/index.html` CSP: `img-src 'self' data: blob:` — `file:` scheme 누락. `file://` URL 요청이 CSP에 의해 차단.
+
+**Correct fix:** `img-src 'self' data: blob: file: https:` 로 확장.
+
+---
+
+## Windows `filePath` 백슬래시 — `lastIndexOf('/')` 실패 — 2026-05-28
+
+**Symptom:** Windows에서 뷰어 이미지 렌더 불가. `file:///` URL 대신 `file:///image.png` (경로 없음) 생성.
+
+**Root cause:** Windows `filePath` = `C:\Users\...\README.md`. `lastIndexOf('/')` = -1 → `base = ''` → 잘못된 URL.
+
+**Correct fix:** `filePath.replace(/\\/g, '/')` 로 정규화 후 처리. Windows 경로(`C:/...`): `absBase = '/' + base` 로 `file:///C:/...` 형태 생성.
+
+---
+
+## `analyzeDirectory` sync → async 전환 시 테스트 업데이트 필수 — 2026-05-28
+
+**Symptom:** `analyzeDirectory` async 전환 후 detector 테스트 26개 전부 실패. `result.primaryType`이 `undefined`.
+
+**Root cause:** 테스트에서 `const result = analyzeDirectory(dir)` — Promise를 받아서 `.primaryType` 접근 → `undefined`.
+
+**Correct fix:** 테스트 callback `async`, `const result = await analyzeDirectory(dir)`. sed로 일괄 치환 가능.
+
+---
+
+## electron-builder `mac.identity: null` vs `CSC_IDENTITY_AUTO_DISCOVERY: false` — 2026-05-28
+
+**Symptom:** 로컬 macOS 빌드: `codesign --sign <real-cert> ... locale.pak: Operation not permitted`. CI는 정상.
+
+**Root cause:** CI에서는 `CSC_IDENTITY_AUTO_DISCOVERY: 'false'` env 설정됨. 로컬에서는 이 env 없음 → electron-builder가 keychain에서 실제 인증서 발견 → deep signing 시도 → locale.pak 권한 오류.
+
+**Correct fix:** `electron-builder.config.ts`에 `mac.identity: null` 추가. env 설정 불필요. afterPack ad-hoc 서명과 병행. `--deep` 플래그도 제거(locale.pak 등 nested 파일 권한 오류 방지).
+
+---
+
 ## electron-builder CSC_LINK 빈값 → "not a file" 에러 — 2026-05-27
 
 **Symptom:** GitHub Actions release 워크플로에서 macOS 빌드 실패. `"CSC_LINK" is not a file`.
