@@ -4,6 +4,7 @@ import { registerAllHandlers } from './ipc'
 import { getDb, closeDb } from './db'
 import { getSetting, setSetting, getAllProjects } from './db/queries'
 import { startWatcher, stopWatcher } from './watcher'
+import { setupAutoUpdater } from './updater'
 
 function createWindow(): BrowserWindow {
   const db = getDb()
@@ -47,6 +48,7 @@ function createWindow(): BrowserWindow {
 app.whenReady().then(() => {
   registerAllHandlers()
   const win = createWindow()
+  setupAutoUpdater(win)
 
   // Start watcher if there's an active project
   const db = getDb()

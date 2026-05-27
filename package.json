@@ -3,7 +3,15 @@
   "version": "1.0.0",
   "description": "Desktop app for managing AI-generated Markdown documents",
   "main": "./out/main/index.js",
-  "author": "deurim",
+  "author": {
+    "name": "이드림",
+    "email": "dream70521@gmail.com"
+  },
+  "homepage": "https://github.com/DIMBD-AKE/Markdown-Organizer",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DIMBD-AKE/Markdown-Organizer"
+  },
   "license": "MIT",
   "scripts": {
     "format": "prettier --write .",
@@ -17,7 +25,7 @@
     "postinstall": "electron-builder install-app-deps",
     "build:unpack": "npm run build && electron-builder --dir",
     "build:win": "npm run build && electron-builder --win",
-    "build:mac": "npm run build && electron-builder --mac",
+    "build:mac": "npm run build && PATH=\"$PWD/scripts:$PATH\" electron-builder --mac",
     "build:linux": "npm run build && electron-builder --linux",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -33,6 +41,7 @@
     "@tanstack/react-virtual": "^3.0.0",
     "better-sqlite3": "^12.10.0",
     "chokidar": "^3.6.0",
+    "electron-updater": "^6.8.3",
     "github-slugger": "^2.0.0",
     "mermaid": "^11.0.0",
     "path-browserify": "^1.0.1",

@@ -20,6 +20,14 @@ declare global {
       openPath(targetPath: string): Promise<void>
 
       searchFiles(query: SearchQuery): Promise<{ results: SearchResult[]; error?: string }>
+
+      checkForUpdates(): Promise<void>
+      installUpdate(): Promise<void>
+      onUpdateAvailable(cb: (info: unknown) => void): () => void
+      onUpdateNotAvailable(cb: () => void): () => void
+      onUpdateProgress(cb: (p: unknown) => void): () => void
+      onUpdateDownloaded(cb: () => void): () => void
+      onUpdateError(cb: (msg: string) => void): () => void
     }
   }
 }
