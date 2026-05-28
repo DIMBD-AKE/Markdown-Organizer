@@ -24,6 +24,7 @@ declare global {
       onFileChanged(cb: (payload: { type: string; path: string }) => void): () => void
       startWatcher(projectPath: string): Promise<void>
       openPath(targetPath: string): Promise<void>
+      openExternal(url: string): Promise<void>
 
       searchFiles(query: SearchQuery): Promise<{ results: SearchResult[]; error?: string }>
 

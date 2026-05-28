@@ -241,6 +241,79 @@ v1.1.0 완성. 핵심 수정: macOS ad-hoc 서명(afterPack hook), Windows 렉(r
 
 ---
 
+## M7 · 버그픽스 Round 2 🐛 `main` ✅
+
+> v1.1.x 실배포 후 크로스플랫폼 테스트에서 확인된 버그 수정.
+
+**Completed: 2026-05-28** | Release: v1.1.2 | Work-log: `docs/work-logs/2026-05-28-milestone-7-bugfix2.md`
+
+### 완료 항목
+
+**CI/CD**
+- [x] electron-builder `onTagOrDraft` 기본값 — 태그 감지 시 자동 publish 시도 → `--publish never` 명시로 차단
+- [x] `release:mac/win/linux` 스크립트 추가 (CI 전용, `--publish never` 포함)
+
+**이미지 렌더링**
+- [x] CSP `img-src`에 `file:` 누락 → 로컬 이미지 전부 차단. `file:` 추가로 수정
+- [x] Windows `filePath` 백슬래시 → `lastIndexOf('/')` 실패 → 잘못된 `file://` URL. 정규화 처리
+
+**Windows 렉 (근본 제거)**
+- [x] `analyzeDirectory` 전체 (`detector/index.ts`, `ruleEngine.ts`, `dependencyAnalyzer.ts`) sync → async 전환
+- [x] detector 테스트 `async`/`await` 대응
+
+**macOS 코드사인**
+- [x] electron-builder가 keychain 실제 인증서 자동 사용 → `mac.identity: null`으로 차단
+- [x] afterPack `--deep` 제거 → `locale.pak` 권한 오류 방지
+
+**Windows 빌드**
+- [x] NSIS 설치파일 제거, `portable` 단독 타겟
+- [x] `win.icon: 'build/icon.ico'` 전환
+
+**하이퍼링크**
+- [x] 문서 내 외부 URL 클릭 시 앱 내부 webContents에서 열림 → `setWindowOpenHandler` 이미 존재하지만 `<a href>` onClick 미처리. `shell.openExternal` 연동
+
+**Handoff Note (2026-05-28 02:10):**
+v1.1.2 배포 완료. 핵심 수정: CSP `file:` 추가(로컬 이미지 렌더), Windows 경로 정규화, detector 전체 async(main thread 블로킹 제거), mac.identity null(keychain 충돌 해소), NSIS→portable 전환. 잔여 이슈: macOS "손상된 파일" 지속(ad-hoc 서명 후에도 일부 환경에서 재현), 하이퍼링크 외부 브라우저 미연동, 웹 배지(shields.io) 렌더 불가(CSP 추가 필요), Windows 프로젝트 오픈 버벅거림 지속. 이 4가지가 M8 핵심 과제. work-log: `docs/work-logs/2026-05-28-milestone-7-bugfix2.md`
+
+---
+
+## M8 · 버그픽스 Round 3 + 최적화 🔧 `main` ✅
+
+> v1.1.2 이후 잔여 버그 완전 해소 + 빌드 용량 최적화.
+
+**Completed: 2026-05-28** | Release: v1.1.5 | Work-log: `docs/work-logs/2026-05-28-milestone-8-bugfix3.md`
+
+### 완료 항목
+
+**macOS Gatekeeper 근본 수정**
+- [x] Bottom-up 선별 deep 서명 (Mach-O 후보만 — `.dylib`/`.so`/`.node` + `.framework`/`.app`)
+- [x] `.pak`/`.lproj`/`.icns` 등 리소스 스킵으로 M7 `locale.pak` 권한 오류 회피
+- [x] 빌드 후 `codesign --verify --strict --deep` 자동 검증
+
+**외부 하이퍼링크**
+- [x] 신규 `OPEN_EXTERNAL` IPC (`shell.openExternal` + `http(s):` 화이트리스트)
+- [x] `MarkdownRenderer` `<a>` 핸들러에서 외부 URL 감지 → 기본 브라우저
+
+**웹 이미지**
+- [x] CSP `img-src 'self' data: blob: file: https:` — shields.io 등 렌더 가능
+
+**Windows fs 부하 (구조적)**
+- [x] `Semaphore(8)` 공유로 재귀 `Promise.all` cascade 차단
+- [x] `src/main/concurrency.ts` — `Semaphore`/`withSemaphore`/`pMap`
+
+**빌드 최적화**
+- [x] `compression: 'maximum'` (LZMA)
+- [x] v1.1.2 stale app.asar bloat 167MB 원인 식별 (config 미로드) — v1.1.4부터 정상
+
+**검증**
+- [x] 47 → 90 테스트, 모두 통과, tsc clean
+- [x] 빌드 후 기존 `dist/mac-arm64/.app`에 sign-mac 실행 → 12 internal targets, 0 failures, verify pass
+
+**Handoff Note (2026-05-28):**
+v1.1.5 배포. M8 시작 시 코드 정독으로 문서 계획 재검증 → afterSign 단독 불충분, openPath ≠ openExternal 두 건 정정. Semaphore 패턴은 재귀 트리 fs 호출의 표준 해법. 잔여 manual smoke: 실제 DMG 다운로드 → Gatekeeper 통과 확인, Windows 실기에서 lag 체감 확인.
+
+---
+
 ## 이후 고려 항목 (미정)
 
 - 탭 시스템 (멀티 문서 열람)

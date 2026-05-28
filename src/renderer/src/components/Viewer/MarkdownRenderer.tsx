@@ -187,7 +187,13 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
 
     a({ href, children }) {
       const handleClick = (e: React.MouseEvent) => {
-        if (href?.endsWith('.md')) {
+        if (!href) return
+        if (/^https?:\/\//i.test(href)) {
+          e.preventDefault()
+          window.api.openExternal(href)
+          return
+        }
+        if (href.endsWith('.md')) {
           e.preventDefault()
           const normPath = filePath.replace(/\\/g, '/')
           const base = normPath.substring(0, normPath.lastIndexOf('/'))
