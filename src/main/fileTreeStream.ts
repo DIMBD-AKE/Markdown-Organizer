@@ -19,18 +19,9 @@ import fs from 'fs'
 import path from 'path'
 import type { BrowserWindow } from 'electron'
 import { Semaphore, withSemaphore } from './concurrency'
+import { EXCLUDED_DIRS, UNITY_EXCLUDED } from './projectFilters'
 import { IPC } from './ipc/channels'
 import type { FileNode } from '../renderer/src/types'
-
-const EXCLUDED_DIRS = new Set([
-  'node_modules', '.git', '.hg', '.svn',
-  'dist', 'build', 'out', '.next', '.nuxt', '.svelte-kit',
-  '__pycache__', '.pytest_cache', '.mypy_cache',
-  '.turbo', 'coverage', '.nyc_output',
-  '.DS_Store', 'Thumbs.db'
-])
-
-const UNITY_EXCLUDED = new Set(['Library', 'Temp', 'Logs', 'obj', 'Build', 'Builds'])
 
 const FS_CONCURRENCY = 8
 

@@ -8,6 +8,7 @@ declare global {
       closeWindow(): Promise<void>
       minimizeWindow(): Promise<void>
       toggleMaximize(): Promise<void>
+      setTitleBarOverlay(theme: 'dark' | 'black' | 'latte'): Promise<void>
 
       selectFolder(): Promise<string | null>
       addProject(folderPath: string): Promise<Project>

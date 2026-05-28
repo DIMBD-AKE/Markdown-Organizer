@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld('api', {
   closeWindow: () => ipcRenderer.invoke(IPC.CLOSE_WINDOW),
   minimizeWindow: () => ipcRenderer.invoke(IPC.MINIMIZE_WINDOW),
   toggleMaximize: () => ipcRenderer.invoke(IPC.TOGGLE_MAXIMIZE),
+  setTitleBarOverlay: (theme: 'dark' | 'black' | 'latte') =>
+    ipcRenderer.invoke(IPC.SET_TITLE_BAR_OVERLAY, theme),
 
   selectFolder: () => ipcRenderer.invoke(IPC.SELECT_FOLDER),
   addProject: (folderPath: string) => ipcRenderer.invoke(IPC.ADD_PROJECT, folderPath),

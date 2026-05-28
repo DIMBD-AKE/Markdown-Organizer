@@ -111,6 +111,14 @@ export default function App() {
     }
   }, [setProjects, setActiveProject, setTheme, setFileTreeWidth, setTocWidth])
 
+  // ---------- Windows native title-bar overlay follows theme ----------
+  // Without this the right-side native min/max/close buttons stay at the
+  // value baked into BrowserWindow at construction time, so switching
+  // dark↔black↔latte leaves the overlay area mismatched.
+  useEffect(() => {
+    window.api.setTitleBarOverlay?.(theme)
+  }, [theme])
+
   // ---------- Cmd+F / Ctrl+F shortcut ----------
   useEffect(() => {
     function onKey(e: KeyboardEvent) {

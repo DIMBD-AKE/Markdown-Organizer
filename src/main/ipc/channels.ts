@@ -20,6 +20,7 @@ export const IPC = {
   CLOSE_WINDOW:         'close-window',
   MINIMIZE_WINDOW:      'minimize-window',
   TOGGLE_MAXIMIZE:      'toggle-maximize',
+  SET_TITLE_BAR_OVERLAY: 'set-title-bar-overlay',
   SEARCH_FILES:         'search-files',
   CHECK_FOR_UPDATES:    'check-for-updates',
   INSTALL_UPDATE:       'install-update',

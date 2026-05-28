@@ -2,6 +2,24 @@
 
 All notable changes to Markdown Organizer are documented here.
 
+## [1.1.7] — 2026-05-28
+
+### Fixed
+- **Windows 워처 startup 렉 (근본 제거)** — chokidar가 dotfile 외에는 모든 파일을 감시 등록하면서 `node_modules`/`Library`/`Temp`/`obj` 등을 전부 스캔. 사용자의 Unity 프로젝트(Project-World)에서 `startWatcher` 한 번이 **9524 ms** 동안 main thread를 blocking. `EXCLUDED_DIRS` + `UNITY_EXCLUDED` + `.md`-only 필터를 chokidar `ignored`에 통합하여 동일 프로젝트에서 **391 ms** 로 단축 (24배). `isUnityProjectSync`로 워처 startup 시점 동기 감지.
+- **빈 폴더가 트리뷰에 남는 문제** — M9 progressive streaming은 폴더를 발견 즉시 emit하느라 마크다운이 없는 폴더도 노출. `streamFileTree` 주석에 "Renderer can hide them post-COMPLETE if needed"로 미완으로 남았던 부분을 `pruneEmptyDirs`로 마무리. `completeStream()`이 트리를 재귀 walk 하면서 mdCount==0 디렉터리를 제거하고 모든 살아남은 dir의 recursive mdCount를 재계산.
+- **윈도우 네이티브 타이틀바 오버레이 테마 미반영** — `BrowserWindow.titleBarOverlay`가 윈도우 생성 시점에 `#1e1e2e`/`#cdd6f4`로 하드코딩되어 dark↔black↔latte 전환 시 우측 138px 네이티브 영역만 변하지 않음. `SET_TITLE_BAR_OVERLAY` IPC + `win.setTitleBarOverlay()` 호출로 테마 전환마다 동적 갱신. 초기 색은 db의 영구 저장된 theme에서 읽어 적용 (launch flash 없음). 색상은 `--color-mantle`(헤더 실제 bg)에 정렬 — 기존 미세 미스매치도 함께 해소.
+
+### Changed
+- `src/main/projectFilters.ts` 신규 — `EXCLUDED_DIRS`/`UNITY_EXCLUDED`/`isUnityProjectSync` 공용화. `fs.ts`/`fileTreeStream.ts`/`watcher.ts`가 동일 상수 참조 → 트리 빌더와 워처의 필터 드리프트 방지.
+- `shiki` 직접 dependency 추가 — pnpm 격리 환경에서 `@shikijs/rehype` transitive로는 `import 'shiki'` 미해소되던 문제.
+
+### Tests
+- 103 → 131 (pruneEmptyDirs 7, completeStream 1, mdCount recompute 1, search 20).
+- `tsc --noEmit` clean (node + web), `electron-vite build` clean.
+
+### Verification
+- `scripts/profile-tree.cjs` / `scripts/profile-watcher.cjs` — Windows 환경에서 실측치 기록. 사용자 Unity 프로젝트(2923 dirs, 1114 md): 워처 9524ms → 391ms.
+
 ## [1.1.6] — 2026-05-28
 
 ### Changed

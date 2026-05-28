@@ -1,6 +1,6 @@
 {
   "name": "markdown-organizer",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Desktop app for managing AI-generated Markdown documents",
   "main": "./out/main/index.js",
   "author": {
@@ -59,6 +59,7 @@
     "remark-gfm": "^4.0.0",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.0.0",
+    "shiki": "^1.29.2",
     "unified": "^11.0.0",
     "zustand": "^4.5.0"
   },

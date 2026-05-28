@@ -5,11 +5,14 @@ import { getDb, closeDb } from './db'
 import { getSetting, setSetting, getAllProjects } from './db/queries'
 import { startWatcher, stopWatcher } from './watcher'
 import { setupAutoUpdater } from './updater'
+import { THEME_OVERLAY, type ThemeName } from './ipc/window'
 
 function createWindow(): BrowserWindow {
   const db = getDb()
   const w = parseInt(getSetting(db, 'window_width') ?? '1280', 10)
   const h = parseInt(getSetting(db, 'window_height') ?? '800', 10)
+  const persistedTheme = (getSetting(db, 'theme') ?? 'dark') as ThemeName
+  const initialOverlay = THEME_OVERLAY[persistedTheme] ?? THEME_OVERLAY.dark
 
   const win = new BrowserWindow({
     width: w,
@@ -18,9 +21,11 @@ function createWindow(): BrowserWindow {
     minHeight: 600,
     titleBarStyle: 'hidden',
     trafficLightPosition: { x: 12, y: 12 },
-    // Windows: native control overlay (min/max/close) at 40px height matching h-10
+    // Windows: native control overlay (min/max/close) at 40px height matching h-10.
+    // Color picks the persisted theme's mantle so the overlay matches the
+    // <header> bg from first paint — no theme flash on launch.
     ...(process.platform === 'win32' ? {
-      titleBarOverlay: { color: '#1e1e2e', symbolColor: '#cdd6f4', height: 40 }
+      titleBarOverlay: { color: initialOverlay.color, symbolColor: initialOverlay.symbolColor, height: 40 }
     } : {}),
     webPreferences: {
       preload: path.join(__dirname, '../preload/index.js'),

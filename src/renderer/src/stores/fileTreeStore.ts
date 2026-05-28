@@ -29,6 +29,35 @@ interface FileTreeStore {
   completeStream(): void
 }
 
+/** Recursively count markdown files (files with isDir=false) in a subtree. */
+function recursiveMdCount(node: FileNode): number {
+  if (!node.isDir) return 1
+  if (!node.children) return 0
+  return node.children.reduce((acc, c) => acc + recursiveMdCount(c), 0)
+}
+
+/**
+ * Recursively remove directories that contain no markdown descendants.
+ * Recomputes `mdCount` (recursive) for every surviving directory. Root is
+ * never removed even when its children all prune away — caller decides what
+ * to render when the root is empty.
+ */
+function pruneEmptyDirs(root: FileNode): FileNode {
+  if (!root.isDir) return root
+  const children = root.children ?? []
+  const survivors: FileNode[] = []
+  for (const c of children) {
+    if (!c.isDir) {
+      survivors.push(c)
+      continue
+    }
+    const prunedChild = pruneEmptyDirs(c)
+    if (recursiveMdCount(prunedChild) > 0) survivors.push(prunedChild)
+  }
+  const mdCount = survivors.reduce((acc, c) => acc + recursiveMdCount(c), 0)
+  return { ...root, children: survivors, mdCount }
+}
+
 /** Immutable patch: set children of node at `targetPath` inside `root`. */
 function patchChildren(root: FileNode, targetPath: string, children: FileNode[]): FileNode {
   if (root.path === targetPath) {
@@ -100,11 +129,12 @@ export const useFileTreeStore = create<FileTreeStore>((set) => ({
     }),
 
   completeStream: () =>
-    set({
+    set((s) => ({
+      tree: s.tree ? pruneEmptyDirs(s.tree) : null,
       loadingDirs: new Set(),
       isStreaming: false,
-    }),
+    })),
 }))
 
 // Exposed for tests
-export const __test = { patchChildren }
+export const __test = { patchChildren, pruneEmptyDirs }

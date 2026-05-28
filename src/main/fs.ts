@@ -1,17 +1,8 @@
 import fs from 'fs'
 import path from 'path'
 import { Semaphore, withSemaphore } from './concurrency'
+import { EXCLUDED_DIRS, UNITY_EXCLUDED } from './projectFilters'
 import type { FileNode } from '../renderer/src/types'
-
-const EXCLUDED_DIRS = new Set([
-  'node_modules', '.git', '.hg', '.svn',
-  'dist', 'build', 'out', '.next', '.nuxt', '.svelte-kit',
-  '__pycache__', '.pytest_cache', '.mypy_cache',
-  '.turbo', 'coverage', '.nyc_output',
-  '.DS_Store', 'Thumbs.db'
-])
-
-const UNITY_EXCLUDED = new Set(['Library', 'Temp', 'Logs', 'obj', 'Build', 'Builds'])
 
 // Global I/O concurrency cap — Windows Defender + chokidar share filesystem queue.
 // 8 picked empirically: high enough for HDD/SSD throughput, low enough to avoid
