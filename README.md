@@ -117,13 +117,13 @@ npm run dev
 ### 프로덕션 빌드
 
 ```bash
-# macOS (DMG)
+# macOS (.app inside .zip, x64 + arm64)
 npm run build:mac
 
-# Windows (NSIS 인스톨러 + Portable exe)
+# Windows (NSIS 설치파일 + Portable exe, x64)
 npm run build:win
 
-# Linux (AppImage)
+# Linux (AppImage, x64)
 npm run build:linux
 ```
 
@@ -144,19 +144,40 @@ git push origin v1.0.0
 
 ## 플랫폼 지원
 
-| 플랫폼 | 형식 | 아키텍처 |
-|--------|------|----------|
-| macOS | DMG | x64, arm64 |
-| Windows | NSIS 인스톨러, Portable exe | x64 |
-| Linux | AppImage | x64 |
+| 플랫폼 | 형식 | 아키텍처 | 비고 |
+|--------|------|----------|------|
+| macOS | `.zip` (안에 `.app`) | x64, arm64 | 압축 풀고 `/Applications` 로 드래그 |
+| Windows | NSIS Setup (`Setup.exe`) | x64 | **권장.** 빠른 시작, 자동 업데이트 통합 |
+| Windows | Portable (`Portable.exe`) | x64 | 단일 exe, 설치 없음. USB / 임시 사용용 (시작 시 `%TEMP%` 압축 해제로 느림) |
+| Linux | AppImage | x64 | 실행 권한 부여 후 더블클릭 |
 
 ### macOS 첫 실행 시
 
-코드사이닝 인증서 없이 배포되므로 Gatekeeper가 차단할 수 있습니다. 터미널에서 아래 명령 실행 후 열어주세요.
+> Apple Developer ID 인증서 + 공증(notarization) 없이 배포되므로 Gatekeeper가 차단합니다.
+> 다이얼로그: *"Apple은 '...'에 사용자의 Mac에 손상을 입히거나 사용자의 개인정보에 침입할 수 있는 악성 코드가 없음을 확인할 수 없습니다."*
+
+다음 중 한 가지 방법으로 실행할 수 있습니다.
+
+**옵션 A — 시스템 설정에서 허용 (1회):**
+
+1. 앱 더블클릭 → "확인할 수 없음" 다이얼로그가 뜨면 "완료" 클릭.
+2. **시스템 설정 → 개인정보 보호 및 보안** 으로 이동.
+3. 하단 *"'Markdown Organizer'이(가) 확인되지 않은 개발자가 만든 것이므로 사용이 차단되었습니다."* 옆 **"그래도 열기"** 버튼 클릭.
+4. 다음 다이얼로그에서 **"열기"** 확인 → 이후로는 정상 실행됩니다.
+
+**옵션 B — 터미널 (1회):**
 
 ```bash
-xattr -cr ~/Downloads/Markdown\ Organizer-*.dmg
-# 또는 앱 번들을 직접:
+# 다운로드한 zip을 압축 해제하고 Markdown Organizer.app 을 /Applications 으로 옮긴 후
 xattr -cr /Applications/Markdown\ Organizer.app
 ```
+
+quarantine 확장 속성 제거 → Gatekeeper 체크 우회. 신뢰할 수 있는 출처(GitHub Releases)에서 받은 빌드에만 사용하세요.
+
+### Windows: NSIS Setup vs Portable
+
+- **NSIS Setup (`Setup.exe`)** — **권장.** 일반 설치 형식. 시작 시 즉시 실행, 자동 업데이트 통합, 시작 메뉴 등록. 일상 사용 시 선택.
+- **Portable (`Portable.exe`)** — 설치 없이 단일 exe. 매 실행마다 `%TEMP%` 에 임시 압축 해제 → 시작이 느림. 권한이 없는 환경 / USB 휴대 / 잠깐 써보는 용도에 적합.
+
+> 같은 컴퓨터에 둘 다 설치 시 데이터 디렉터리는 공유됩니다 (`%APPDATA%/markdown-organizer`).
 

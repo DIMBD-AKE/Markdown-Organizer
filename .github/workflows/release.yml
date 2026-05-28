@@ -77,10 +77,12 @@ jobs:
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "macOS" ]; then
-            find dist -name "*.dmg" | while IFS= read -r f; do
+            # M9: zip target replaced dmg. -mac.zip files contain the .app.
+            find dist -maxdepth 1 -name "*-mac.zip" | while IFS= read -r f; do
               gh release upload "$GITHUB_REF_NAME" "$f" --clobber
             done
           elif [ "$RUNNER_OS" = "Windows" ]; then
+            # NSIS setup + Portable exe both ship.
             find dist -maxdepth 1 -name "*.exe" | while IFS= read -r f; do
               gh release upload "$GITHUB_REF_NAME" "$f" --clobber
             done
