@@ -277,22 +277,40 @@ v1.1.2 배포 완료. 핵심 수정: CSP `file:` 추가(로컬 이미지 렌더)
 
 ---
 
-## M8 · 버그픽스 Round 3 + 최적화 🔧 `feat/m8-bugfix3`
+## M8 · 버그픽스 Round 3 + 최적화 🔧 `main` ✅
 
 > v1.1.2 이후 잔여 버그 완전 해소 + 빌드 용량 최적화.
 
-**Status:** 🔜 Planned
+**Completed: 2026-05-28** | Release: v1.1.5 | Work-log: `docs/work-logs/2026-05-28-milestone-8-bugfix3.md`
 
-### 버그
+### 완료 항목
 
-- [ ] **macOS 손상된 파일 지속** — ad-hoc 서명(`codesign --sign -`) 후에도 Gatekeeper 차단. `--options runtime` 없이 DMG 배포 시 arm64 환경 일부에서 재현. 근본 해결 필요.
-- [ ] **외부 하이퍼링크** — `<a href="https://...">` 클릭 시 기본 브라우저 미연동. `shell.openExternal` 처리 필요.
-- [ ] **웹 이미지/배지 렌더 불가** — `img-src`에 `https:` 없어서 shields.io 등 웹 요청 이미지 차단. CSP 확장 필요.
-- [ ] **Windows 프로젝트 오픈 버벅거림** — async 전환 후에도 지속. `buildFileTree` 내 파일별 `stat` 호출(N개) 의심. 동시성 제한(p-limit 패턴) 또는 stat 스킵 검토.
+**macOS Gatekeeper 근본 수정**
+- [x] Bottom-up 선별 deep 서명 (Mach-O 후보만 — `.dylib`/`.so`/`.node` + `.framework`/`.app`)
+- [x] `.pak`/`.lproj`/`.icns` 등 리소스 스킵으로 M7 `locale.pak` 권한 오류 회피
+- [x] 빌드 후 `codesign --verify --strict --deep` 자동 검증
 
-### 최적화
+**외부 하이퍼링크**
+- [x] 신규 `OPEN_EXTERNAL` IPC (`shell.openExternal` + `http(s):` 화이트리스트)
+- [x] `MarkdownRenderer` `<a>` 핸들러에서 외부 URL 감지 → 기본 브라우저
 
-- [ ] **빌드 용량** — 현재 배포 파일 크기 측정 후 개선 가능 항목 파악. 불필요 의존성 제거, ASAR 압축, 트리쉐이킹 확인.
+**웹 이미지**
+- [x] CSP `img-src 'self' data: blob: file: https:` — shields.io 등 렌더 가능
+
+**Windows fs 부하 (구조적)**
+- [x] `Semaphore(8)` 공유로 재귀 `Promise.all` cascade 차단
+- [x] `src/main/concurrency.ts` — `Semaphore`/`withSemaphore`/`pMap`
+
+**빌드 최적화**
+- [x] `compression: 'maximum'` (LZMA)
+- [x] v1.1.2 stale app.asar bloat 167MB 원인 식별 (config 미로드) — v1.1.4부터 정상
+
+**검증**
+- [x] 47 → 90 테스트, 모두 통과, tsc clean
+- [x] 빌드 후 기존 `dist/mac-arm64/.app`에 sign-mac 실행 → 12 internal targets, 0 failures, verify pass
+
+**Handoff Note (2026-05-28):**
+v1.1.5 배포. M8 시작 시 코드 정독으로 문서 계획 재검증 → afterSign 단독 불충분, openPath ≠ openExternal 두 건 정정. Semaphore 패턴은 재귀 트리 fs 호출의 표준 해법. 잔여 manual smoke: 실제 DMG 다운로드 → Gatekeeper 통과 확인, Windows 실기에서 lag 체감 확인.
 
 ---
 

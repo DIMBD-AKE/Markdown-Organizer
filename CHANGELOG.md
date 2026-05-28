@@ -2,6 +2,26 @@
 
 All notable changes to Markdown Organizer are documented here.
 
+## [1.1.5] — 2026-05-28
+
+### Fixed
+- **macOS Gatekeeper "손상된 파일" 근본 수정** — `afterPack` ad-hoc 서명이 top-level 번들만 처리하던 문제 해결. 내부 Mach-O (`.dylib`, Helper.app 실행파일, framework primary, `.node` N-API 모듈) 미서명 → quarantine xattr 붙은 다운로드 앱에서 Gatekeeper 차단. `scripts/sign-mac.cjs`로 Mach-O 후보(`.dylib`/`.so`/`.node` + `.framework`/`.app` 번들)만 골라 bottom-up 서명. `.pak`/`.lproj` 등 리소스 파일은 건드리지 않아 M7 `locale.pak Operation not permitted` 회피. 빌드 끝에 `codesign --verify --strict --deep`로 자동 검증.
+- **외부 하이퍼링크 기본 브라우저 미연동** — 마크다운 `[text](https://...)` 클릭이 Electron WebContents 내부에서 열리던 문제. 신규 `OPEN_EXTERNAL` IPC 채널 (`shell.openExternal` + `http(s):` 화이트리스트) 추가. `MarkdownRenderer` `<a>` 핸들러가 외부 URL 감지 시 `preventDefault` 후 IPC 호출.
+- **웹 이미지/배지 렌더 불가** — CSP `img-src`에 `https:` 추가. shields.io 등 웹 호스팅 이미지 렌더 가능.
+- **Windows 프로젝트 오픈 버벅거림 (구조적 해소)** — `buildFileTree` 재귀 `Promise.all` 이 깊은 트리에서 cascade(limit^depth)로 동시 syscall 폭주(Unity 프로젝트 등에서 10^5 가능). `Semaphore(8)` 도입으로 모든 `stat`/`readdir`을 공유 큐로 통제. 재귀 구조 유지하면서 실제 I/O만 throttle.
+
+### Added
+- `src/main/concurrency.ts` — `Semaphore`, `withSemaphore`, `pMap` (순서 보존 동시성 제한 map).
+- `src/main/url.ts` — `isAllowedExternalUrl` (electron-free, 테스트 가능).
+
+### Changed
+- `electron-builder.cjs` — `compression: 'maximum'` 추가 (LZMA, DMG/AppImage/exe 크기 ~5-10% 감소 예상).
+- M8 작업 시작 전 기존 계획 문서를 코드 정독하며 재검증 → Task 1 (afterSign 단독 불충분) + Task 2 (`openPath` ≠ `openExternal`) 두 건의 잘못된 접근법 발견 및 정정. 향후 동일 패턴 방지용 4건의 lesson을 `LESSONS_LEARNED.md`에 추가.
+
+### Tests
+- 47 → 90 (URL 11, Semaphore/pMap/withSemaphore 15, sign-mac collectTargets 10, buildFileTree 7).
+- 모든 변경 `tsc --noEmit` clean, `electron-vite build` clean.
+
 ## [1.1.4] — 2026-05-28
 
 ### Fixed
