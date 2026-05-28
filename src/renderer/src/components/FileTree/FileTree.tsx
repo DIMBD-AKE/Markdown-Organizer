@@ -6,11 +6,31 @@ import { flattenTree } from '../../utils/flattenTree'
 import StatusDot from './StatusDot'
 import type { FileNode } from '../../types'
 
+function FolderSpinner() {
+  return (
+    <svg
+      className="animate-spin h-3 w-3 text-overlay0 flex-shrink-0"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <circle
+        cx="12" cy="12" r="9"
+        stroke="currentColor" strokeWidth="3" fill="none"
+        strokeLinecap="round"
+        strokeDasharray="36"
+        strokeDashoffset="18"
+      />
+    </svg>
+  )
+}
+
 export default function FileTree() {
   const toggleDir = useFileTreeStore((s) => s.toggleDir)
   const setSelectedFile = useFileTreeStore((s) => s.setSelectedFile)
   const tree = useFileTreeStore((s) => s.tree)
   const expandedDirs = useFileTreeStore((s) => s.expandedDirs)
+  const loadingDirs = useFileTreeStore((s) => s.loadingDirs)
+  const isStreaming = useFileTreeStore((s) => s.isStreaming)
   const selectedFile = useFileTreeStore((s) => s.selectedFile)
   const setFile = useViewerStore((s) => s.setFile)
   const setError = useViewerStore((s) => s.setError)
@@ -55,6 +75,14 @@ export default function FileTree() {
   }, [toggleDir, setSelectedFile, setFile, setError])
 
   if (items.length === 0) {
+    if (isStreaming) {
+      return (
+        <div className="flex-1 flex items-center justify-center gap-2 p-4">
+          <FolderSpinner />
+          <span className="text-xs text-overlay0">파일 트리 로딩 중…</span>
+        </div>
+      )
+    }
     return (
       <div className="flex-1 flex items-center justify-center p-4">
         <span className="text-xs text-overlay0 text-center">마크다운 파일이 없습니다</span>
@@ -93,6 +121,7 @@ export default function FileTree() {
               <span className="truncate flex-1">
                 {node.isDir ? node.name : node.name.replace(/\.md$/, '')}
               </span>
+              {node.isDir && loadingDirs.has(node.path) && <FolderSpinner />}
               {node.isDir && node.mdCount !== undefined && (
                 <span className="text-overlay0 text-[10px] flex-shrink-0">{node.mdCount}</span>
               )}

@@ -27,7 +27,6 @@ const TYPE_LABEL: Partial<Record<ProjectType, string>> = {
 
 export default function TitleBar() {
   const { projects, activeProjectId, setActiveProject, addProject, removeProject } = useProjectStore()
-  const { setTree, setLoading } = useFileTreeStore()
   const [open, setOpen] = useState(false)
   const activeProject = projects.find((p) => p.id === activeProjectId)
   const activeTypeLabel = activeProject ? TYPE_LABEL[activeProject.type] : undefined
@@ -39,14 +38,13 @@ export default function TitleBar() {
     setActiveProject(id)
     window.api.setSetting('active_project_id', id)
     window.api.startWatcher(projPath)
-    setLoading(true)
     try {
-      const tree = await window.api.getFileTree(projPath)
-      setTree(tree)
+      const { rootNode } = await window.api.getFileTreeStream(projPath)
+      if (rootNode) {
+        useFileTreeStore.getState().startStream(rootNode)
+      }
     } catch (err) {
       console.error('Failed to load project:', err)
-    } finally {
-      setLoading(false)
     }
   }
 
