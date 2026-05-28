@@ -22,23 +22,30 @@ module.exports = {
   },
 
   mac: {
-    target: [{ target: 'dmg', arch: ['x64', 'arm64'] }],
+    // M9: zip target replaces dmg — ad-hoc sign survives zip archiving,
+    // DMG layer added no Gatekeeper benefit while needing dmg-builder Python.
+    target: [{ target: 'zip', arch: ['x64', 'arm64'] }],
     icon: 'build/icon.png',
     category: 'public.app-category.productivity',
     darkModeSupport: true,
     identity: null,
   },
-  dmg: {
-    title: 'Markdown Organizer',
-    contents: [
-      { x: 130, y: 220, type: 'file' },
-      { x: 410, y: 220, type: 'link', path: '/Applications' },
-    ],
-  },
 
   win: {
-    target: [{ target: 'portable', arch: ['x64'] }],
+    // M9: portable + NSIS dual. NSIS recommended for daily use (fast startup,
+    // no %TEMP% extract). Portable retained for USB / no-install scenarios.
+    target: [
+      { target: 'nsis',     arch: ['x64'] },
+      { target: 'portable', arch: ['x64'] },
+    ],
     icon: 'build/icon.ico',
+  },
+  nsis: {
+    oneClick: false,
+    allowToChangeInstallationDirectory: true,
+    perMachine: false,
+    deleteAppDataOnUninstall: false,
+    shortcutName: 'Markdown Organizer',
   },
 
   linux: {

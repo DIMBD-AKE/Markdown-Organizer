@@ -314,6 +314,40 @@ v1.1.5 배포. M8 시작 시 코드 정독으로 문서 계획 재검증 → aft
 
 ---
 
+## M9 · UX Continuity + Distribution Refinement 🎬 `main` ✅
+
+> 멈춤 없는 파일 트리 + macOS zip 배포 + Windows NSIS 듀얼.
+
+**Completed: 2026-05-28** | Release: v1.1.6 | Work-log: `docs/work-logs/2026-05-28-milestone-9-ux.md`
+
+### 완료 항목
+
+**배포 형식**
+- [x] macOS `dmg` → `zip` (`.app` 직접 배포)
+- [x] Windows `portable` + `nsis` 듀얼
+- [x] README 첫 실행 가이드 (macOS xattr / 시스템 설정, Windows NSIS vs Portable)
+
+**Progressive 파일 트리**
+- [x] `streamFileTree(rootPath, win)` — root 즉시 반환 + 백그라운드 walk
+- [x] IPC: `FILE_TREE_NODE`/`FILE_TREE_COMPLETE`/`FILE_TREE_ERROR`
+- [x] `fileTreeStore.applyStreamNode` immutable 트리 patch
+- [x] `loadingDirs` Set + 폴더 노드 우측 spinner (Catppuccin overlay)
+- [x] App.tsx + TitleBar.tsx 초기/스위치 호출 streaming 전환
+- [x] 세션 복원 호환 (마지막 파일 즉시 로드, expandedDirs 자동 적용)
+
+**검증**
+- [x] 103/103 테스트 (8 stream integration + 5 patchChildren)
+- [x] tsc clean, electron-vite build clean
+
+**한계 / 추후 과제**
+- macOS notarization은 Apple Developer ID 필요 — 별도 마일스톤
+- 파일 변경 감지 시 `useFileWatcher`는 여전히 `buildFileTree` 사용 (희소한 트리거이나 대형 프로젝트에서 freeze 가능). 점진적 patch로 개선 여지
+
+**Handoff Note (2026-05-28):**
+v1.1.6 배포. Progressive streaming으로 Windows 대형 프로젝트 오픈 시 "멈춤" 체감 0이 목표. 폴더별 spinner로 진행 시각화. macOS zip 배포는 DMG보다 Gatekeeper 우회에 미세하게 유리할 수 있음 (DMG layer signing 이슈 회피).
+
+---
+
 ## 이후 고려 항목 (미정)
 
 - 탭 시스템 (멀티 문서 열람)

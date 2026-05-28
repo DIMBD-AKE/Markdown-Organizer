@@ -15,6 +15,10 @@ declare global {
       saveProjectState(state: ProjectState): Promise<void>
 
       getFileTree(dirPath: string): Promise<FileNode>
+      getFileTreeStream(dirPath: string): Promise<{ rootNode: FileNode | null; error: string | null }>
+      onFileTreeNode(cb: (payload: { parentPath: string; children: FileNode[] }) => void): () => void
+      onFileTreeComplete(cb: (payload: { rootPath: string }) => void): () => void
+      onFileTreeError(cb: (payload: { rootPath: string; error: string }) => void): () => void
       readFile(filePath: string): Promise<{ content: string | null; error: string | null }>
       getAppState(): Promise<AppState>
 

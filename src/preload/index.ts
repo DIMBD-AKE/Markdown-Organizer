@@ -14,6 +14,22 @@ contextBridge.exposeInMainWorld('api', {
   saveProjectState: (state: unknown) => ipcRenderer.invoke(IPC.SAVE_PROJECT_STATE, state),
 
   getFileTree: (dirPath: string) => ipcRenderer.invoke(IPC.GET_FILE_TREE, dirPath),
+  getFileTreeStream: (dirPath: string) => ipcRenderer.invoke(IPC.GET_FILE_TREE_STREAM, dirPath),
+  onFileTreeNode: (cb: (payload: { parentPath: string; children: unknown[] }) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, payload: { parentPath: string; children: unknown[] }) => cb(payload)
+    ipcRenderer.on(IPC.FILE_TREE_NODE, listener)
+    return () => ipcRenderer.removeListener(IPC.FILE_TREE_NODE, listener)
+  },
+  onFileTreeComplete: (cb: (payload: { rootPath: string }) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, payload: { rootPath: string }) => cb(payload)
+    ipcRenderer.on(IPC.FILE_TREE_COMPLETE, listener)
+    return () => ipcRenderer.removeListener(IPC.FILE_TREE_COMPLETE, listener)
+  },
+  onFileTreeError: (cb: (payload: { rootPath: string; error: string }) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, payload: { rootPath: string; error: string }) => cb(payload)
+    ipcRenderer.on(IPC.FILE_TREE_ERROR, listener)
+    return () => ipcRenderer.removeListener(IPC.FILE_TREE_ERROR, listener)
+  },
   readFile: (filePath: string) => ipcRenderer.invoke(IPC.READ_FILE, filePath),
   getAppState: () => ipcRenderer.invoke(IPC.GET_APP_STATE),
 

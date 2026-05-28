@@ -2,6 +2,26 @@
 
 All notable changes to Markdown Organizer are documented here.
 
+## [1.1.6] — 2026-05-28
+
+### Changed
+- **macOS 배포 형식: DMG → ZIP** — DMG 레이어가 Gatekeeper 우회에 기여하지 않으면서 dmg-builder Python 의존성만 추가됨. zip 안에 `.app`을 그대로 담아 배포 — 압축 해제 후 `/Applications` 드래그. afterPack ad-hoc deep signature는 zip 아카이브에서 보존됨. `*-mac.zip` (arm64/x64).
+- **Windows: NSIS Setup + Portable 듀얼 배포** — NSIS 설치파일(`Setup.exe`)이 권장. `%TEMP%` 압축 해제 없이 즉시 실행 + 자동 업데이트 통합. Portable은 USB / 일시 사용용으로 유지. README에 선택 가이드.
+
+### Added
+- **Progressive 파일 트리 로딩 — 멈춤 없는 프로젝트 오픈** — 기존 `buildFileTree` 가 전체 재귀 완료까지 await로 UI 정지하던 문제 해소. 신규 `streamFileTree(rootPath, win)` 는 root 노드를 즉시 반환하고 백그라운드 walk가 폴더별 `FILE_TREE_NODE` 이벤트를 푸시. 각 폴더는 자기 자식이 도착하기 전까지 우측에 작은 spinner (Catppuccin overlay 색) 표시.
+  - 메인: shared Semaphore(8) 그대로 사용 (M8 패턴). 재귀는 무제한, 실제 syscall만 throttle.
+  - 렌더러: `fileTreeStore`에 `loadingDirs: Set<string>`, `isStreaming` 추가. `applyStreamNode`로 immutable 트리 패치 (path-walk + sibling 보존).
+  - 세션 복원: 마지막 활성 파일은 stream과 독립적으로 즉시 로드 (파일 경로만 필요). expandedDirs 복원은 데이터 도착 시점에 자동 적용.
+- **README 가이드 보강** — macOS 첫 실행 안내: 시스템 설정 → "그래도 열기" 방법 + `xattr -cr` 방법 (Sequoia 15.x "Apple이 확인할 수 없습니다" 다이얼로그 대응). 플랫폼 지원 표에 형식별 비고 추가 (NSIS 권장 / Portable 보조).
+
+### Fixed
+- **macOS Gatekeeper "Apple이 확인할 수 없습니다" — 우회 경로 명확화** — M8의 deep ad-hoc sign으로 `damaged file` → `not notarized` 다이얼로그로 변화. notarization은 Apple Developer ID 인증서 ($99/yr) 필요한 근본 해결책 — 별도 마일스톤. M9에서는 사용자 우회 옵션 두 가지를 README에 정식 문서화.
+
+### Tests
+- 90 → 103 (streamFileTree integration 8, patchChildren immutable patch 5).
+- `tsc --noEmit` clean (node + web), `electron-vite build` clean.
+
 ## [1.1.5] — 2026-05-28
 
 ### Fixed

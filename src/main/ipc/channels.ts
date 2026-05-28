@@ -1,6 +1,10 @@
 export const IPC = {
   GET_APP_STATE:      'get-app-state',
-  GET_FILE_TREE:      'get-file-tree',
+  GET_FILE_TREE:        'get-file-tree',
+  GET_FILE_TREE_STREAM: 'get-file-tree-stream',
+  FILE_TREE_NODE:       'file-tree-node',
+  FILE_TREE_COMPLETE:   'file-tree-complete',
+  FILE_TREE_ERROR:      'file-tree-error',
   READ_FILE:          'read-file',
   ADD_PROJECT:        'add-project',
   REMOVE_PROJECT:     'remove-project',

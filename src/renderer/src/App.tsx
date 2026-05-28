@@ -35,6 +35,19 @@ export default function App() {
 
   // ---------- Init ----------
   useEffect(() => {
+    // Subscribe to streaming events BEFORE invoking any stream — events emit
+    // from main as soon as the first folder is read.
+    const unsubNode = window.api.onFileTreeNode(({ parentPath, children }) => {
+      useFileTreeStore.getState().applyStreamNode(parentPath, children)
+    })
+    const unsubComplete = window.api.onFileTreeComplete(() => {
+      useFileTreeStore.getState().completeStream()
+    })
+    const unsubErr = window.api.onFileTreeError(({ error }) => {
+      console.error('File tree stream error:', error)
+      useFileTreeStore.getState().completeStream()
+    })
+
     window.api.getAppState().then(async (state) => {
       setProjects(state.projects)
       setTheme(state.theme as 'dark' | 'black' | 'latte')
@@ -46,19 +59,21 @@ export default function App() {
           useFileTreeStore.getState().setExpandedDirs(ps.expandedDirs)
           const proj = state.projects.find((p) => p.id === state.activeProjectId)
           if (proj) {
-            useFileTreeStore.getState().setLoading(true)
             try {
-              const tree = await window.api.getFileTree(proj.path)
-              useFileTreeStore.getState().setTree(tree)
+              const { rootNode } = await window.api.getFileTreeStream(proj.path)
+              if (rootNode) {
+                useFileTreeStore.getState().startStream(rootNode)
+              }
               if (ps.lastFile) {
+                // Independent of stream — file content load doesn't need tree
                 const { content } = await window.api.readFile(ps.lastFile)
                 if (content) {
                   useViewerStore.getState().setFile(ps.lastFile, content)
                   useFileTreeStore.getState().setSelectedFile(ps.lastFile)
                 }
               }
-            } finally {
-              useFileTreeStore.getState().setLoading(false)
+            } catch (err) {
+              console.error('Failed to load project:', err)
             }
           }
         }
@@ -88,7 +103,12 @@ export default function App() {
       })
     }
     window.addEventListener('beforeunload', saveState)
-    return () => window.removeEventListener('beforeunload', saveState)
+    return () => {
+      window.removeEventListener('beforeunload', saveState)
+      unsubNode()
+      unsubComplete()
+      unsubErr()
+    }
   }, [setProjects, setActiveProject, setTheme, setFileTreeWidth, setTocWidth])
 
   // ---------- Cmd+F / Ctrl+F shortcut ----------
