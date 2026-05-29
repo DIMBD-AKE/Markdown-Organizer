@@ -5,6 +5,7 @@ import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import rehypeRaw from 'rehype-raw'
 import { useViewerStore } from '../../stores/viewerStore'
+import { useFileTreeStore } from '../../stores/fileTreeStore'
 import { useSearchStore } from '../../stores/searchStore'
 import { extractToc } from '../../utils/toc'
 import CodeBlock from './CodeBlock'
@@ -96,6 +97,19 @@ function insertMarks(container: HTMLElement, regex: RegExp): HTMLElement[] {
   }
 
   return marks
+}
+
+/** Returns dirs that need to be in expandedDirs so `filePath` is visible in the tree.
+ *  Root's direct children are always visible, so root itself is excluded. */
+function collectParentDirs(filePath: string, root: string): string[] {
+  const normRoot = root.endsWith('/') ? root.slice(0, -1) : root
+  const dirs: string[] = []
+  let dir = filePath.substring(0, filePath.lastIndexOf('/'))
+  while (dir !== normRoot && dir.startsWith(normRoot) && dir.length > normRoot.length) {
+    dirs.push(dir)
+    dir = dir.substring(0, dir.lastIndexOf('/'))
+  }
+  return dirs
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -193,16 +207,37 @@ export default function MarkdownRenderer({ content, filePath }: Props) {
           window.api.openExternal(href)
           return
         }
-        if (href.endsWith('.md')) {
+        // Anchor-only links (#heading) — let rehype-slug handle scroll natively
+        if (href.startsWith('#')) return
+
+        // Decode percent-encoded Unicode paths (e.g. %EC%B4%88%EC%95%88.md → 초안.md)
+        const decoded = decodeURIComponent(href)
+        const normPath = filePath.replace(/\\/g, '/')
+        const base = normPath.substring(0, normPath.lastIndexOf('/'))
+        const abs = decoded.startsWith('/') ? decoded : `${base}/${decoded}`
+
+        if (decoded.endsWith('.md')) {
           e.preventDefault()
-          const normPath = filePath.replace(/\\/g, '/')
-          const base = normPath.substring(0, normPath.lastIndexOf('/'))
-          const abs = href.startsWith('/') ? href : `${base}/${href}`
           window.api.readFile(abs).then(({ content: c, error }) => {
-            if (c) useViewerStore.getState().setFile(abs, c)
-            else useViewerStore.getState().setError(error ?? '읽기 실패')
+            if (c) {
+              useViewerStore.getState().setFile(abs, c)
+              // Sync left-panel selection and expand ancestor dirs
+              const root = useFileTreeStore.getState().tree?.path ?? ''
+              useFileTreeStore.getState().expandDirs(collectParentDirs(abs, root))
+              useFileTreeStore.getState().setSelectedFile(abs)
+            } else {
+              useViewerStore.getState().setError(error ?? '읽기 실패')
+            }
           })
+          return
         }
+
+        // Non-http, non-.md → treat as directory link.
+        // Prevent navigation crash; highlight the dir in the file tree instead.
+        e.preventDefault()
+        const root = useFileTreeStore.getState().tree?.path ?? ''
+        useFileTreeStore.getState().expandDirs(collectParentDirs(abs, root))
+        useFileTreeStore.getState().setSelectedFile(abs)
       }
       return (
         <a href={href} onClick={handleClick} className="text-blue hover:underline">

@@ -95,7 +95,7 @@ export default function FileTree() {
       <div style={{ height: virtualizer.getTotalSize() }} className="relative">
         {virtualizer.getVirtualItems().map((vi) => {
           const { node, depth } = items[vi.index]
-          const isSelected = !node.isDir && node.path === selectedFile
+          const isSelected = node.path === selectedFile
           return (
             <div
               key={node.path}
