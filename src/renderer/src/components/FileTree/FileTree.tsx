@@ -1,8 +1,11 @@
 import { useVirtualizer } from '@tanstack/react-virtual'
-import { useRef, useCallback, useEffect } from 'react'
+import { useRef, useCallback, useEffect, useMemo } from 'react'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import { useViewerStore } from '../../stores/viewerStore'
+import { useUiStore } from '../../stores/uiStore'
 import { flattenTree } from '../../utils/flattenTree'
+import { sortTree } from '../../utils/sortTree'
+import { groupTree } from '../../utils/groupTree'
 import StatusDot from './StatusDot'
 import type { FileNode } from '../../types'
 
@@ -34,6 +37,9 @@ export default function FileTree() {
   const selectedFile = useFileTreeStore((s) => s.selectedFile)
   const setFile = useViewerStore((s) => s.setFile)
   const setError = useViewerStore((s) => s.setError)
+  const sortField = useUiStore((s) => s.sortField)
+  const sortOrder = useUiStore((s) => s.sortOrder)
+  const virtualGrouping = useUiStore((s) => s.virtualGrouping)
   const parentRef = useRef<HTMLDivElement>(null)
 
   // NOTE: mountedRef removed intentionally.
@@ -41,7 +47,13 @@ export default function FileTree() {
   // permanently false and silently blocking setFile after every click.
   // Calling Zustand setFile/setError after unmount is safe — pure in-memory update.
 
-  const items = tree ? flattenTree(tree.children ?? [], expandedDirs) : []
+  const arranged = useMemo(() => {
+    const rootChildren = tree?.children ?? []
+    return virtualGrouping
+      ? groupTree(rootChildren, tree?.path ?? '', sortField, sortOrder)
+      : sortTree(rootChildren, sortField, sortOrder)
+  }, [tree, virtualGrouping, sortField, sortOrder])
+  const items = tree ? flattenTree(arranged, expandedDirs) : []
 
   const virtualizer = useVirtualizer({
     count: items.length,

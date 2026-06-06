@@ -47,6 +47,8 @@ export interface FileNode {
   children?: FileNode[]
   modifiedAt: number
   mdCount?: number
+  /** True for presentational virtual-group folders (no real path on disk). */
+  isVirtual?: boolean
 }
 
 export interface ProjectState {

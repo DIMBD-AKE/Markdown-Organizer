@@ -20,11 +20,14 @@ export function setupAutoUpdater(win: BrowserWindow): void {
     win.webContents.send(IPC.UPDATE_DOWNLOADED)
   })
   autoUpdater.on('error', (err) => {
-    // Private repo → GitHub returns 404/401 for latest.yml without auth token.
-    // Treat these as "no update available" rather than a user-visible error.
     const msg = err.message ?? ''
-    const isAuthError = /404|401|HttpError|net::ERR_/i.test(msg)
-    if (isAuthError) {
+    console.warn('[updater] error:', msg)
+    // 404 means update metadata (latest*.yml) is genuinely absent or the host is
+    // unreachable — nothing actionable for the user, so treat as "no update".
+    // Other errors (incl. 401, malformed yml) are surfaced now that the repo is
+    // public; masking them hid the missing-yml bug.
+    const isNoMetadata = /404|net::ERR_/i.test(msg)
+    if (isNoMetadata) {
       win.webContents.send(IPC.UPDATE_NOT_AVAILABLE)
     } else {
       win.webContents.send(IPC.UPDATE_ERROR, msg)

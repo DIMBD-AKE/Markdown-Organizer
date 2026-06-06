@@ -5,6 +5,8 @@ interface ViewerStore {
   filePath: string | null
   content: string | null
   toc: TocItem[]
+  /** Ids of TOC headings whose children are collapsed. Reset per document. */
+  collapsedTocIds: Set<string>
   scrollPos: number
   history: string[]
   historyIndex: number
@@ -20,6 +22,7 @@ interface ViewerStore {
   loadFile(path: string, content: string): void
 
   setToc(toc: TocItem[]): void
+  toggleTocCollapse(id: string): void
   setScrollPos(pos: number): void
   setError(err: string | null): void
   navigateTo(path: string): void
@@ -37,6 +40,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   filePath: null,
   content: null,
   toc: [],
+  collapsedTocIds: new Set(),
   scrollPos: 0,
   history: [],
   historyIndex: -1,
@@ -45,13 +49,19 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   setFile: (path, content) =>
     set((s) => {
       const history = truncateAndAppend(s.history, s.historyIndex, path)
-      return { filePath: path, content, error: null, history, historyIndex: history.length - 1 }
+      return { filePath: path, content, error: null, collapsedTocIds: new Set(), history, historyIndex: history.length - 1 }
     }),
 
   // Just display the file — history was already updated by goBack/goForward
-  loadFile: (path, content) => set({ filePath: path, content, error: null }),
+  loadFile: (path, content) => set({ filePath: path, content, error: null, collapsedTocIds: new Set() }),
 
   setToc: (toc) => set({ toc }),
+  toggleTocCollapse: (id) =>
+    set((s) => {
+      const next = new Set(s.collapsedTocIds)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return { collapsedTocIds: next }
+    }),
   setScrollPos: (scrollPos) => set({ scrollPos }),
   setError: (error) => set({ error }),
 
@@ -78,5 +88,5 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   },
 
   clearForProjectSwitch: () =>
-    set({ filePath: null, content: null, toc: [], scrollPos: 0, history: [], historyIndex: -1, error: null }),
+    set({ filePath: null, content: null, toc: [], collapsedTocIds: new Set(), scrollPos: 0, history: [], historyIndex: -1, error: null }),
 }))

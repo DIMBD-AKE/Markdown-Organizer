@@ -89,6 +89,18 @@ export default function App() {
       if (tocw) setTocWidth(Math.max(MIN_TOC, Math.min(MAX_TOC, Number(tocw))))
     })
 
+    // Restore file-tree sort + virtual grouping prefs
+    Promise.all([
+      window.api.getSetting('file_sort_field'),
+      window.api.getSetting('file_sort_order'),
+      window.api.getSetting('virtual_grouping'),
+    ]).then(([field, order, grouping]) => {
+      const ui = useUiStore.getState()
+      if (field === 'name' || field === 'date') ui.setSortField(field)
+      if (order === 'asc' || order === 'desc') ui.setSortOrder(order)
+      if (grouping != null) ui.setVirtualGrouping(grouping === 'true')
+    })
+
     const saveState = () => {
       const { activeProjectId } = useProjectStore.getState()
       if (!activeProjectId) return
