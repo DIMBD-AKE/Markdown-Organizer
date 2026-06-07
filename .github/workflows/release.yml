@@ -72,6 +72,10 @@ jobs:
         run: npm run ${{ matrix.build_cmd }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          # Required so electron-builder (--publish always) can upload the
+          # latest*.yml update metadata to the release. Without this the
+          # auto-updater has no manifest to read and silently finds no update.
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Upload artifacts to release
         shell: bash

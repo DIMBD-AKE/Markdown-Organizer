@@ -56,7 +56,7 @@ export default function FileTreePanel() {
                 : 'border-surface0 text-overlay0 hover:text-subtext0 hover:border-surface1'
             }`}
           >
-            그룹
+            가상 그룹화
           </button>
         </div>
         {activeProjectId && (
