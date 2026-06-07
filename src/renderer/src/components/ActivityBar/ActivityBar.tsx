@@ -1,6 +1,7 @@
 import React from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
+import { useViewerStore } from '../../stores/viewerStore'
 import ProjectIcon from './ProjectIcon'
 import ThemeToggle from '../ThemeToggle'
 
@@ -10,7 +11,6 @@ const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
 export default function ActivityBar() {
   const { projects, activeProjectId, setActiveProject } = useProjectStore()
-  const { setTree, setLoading } = useFileTreeStore()
 
   async function handleAddProject() {
     try {
@@ -25,16 +25,21 @@ export default function ActivityBar() {
   }
 
   async function selectProject(id: string, path: string) {
+    // Mirror TitleBar: streaming (non-blocking) switch. The old blocking
+    // getFileTree + setLoading froze the whole panel until the full scan
+    // finished and never reset the viewer/selection.
+    useViewerStore.getState().clearForProjectSwitch()
+    useFileTreeStore.getState().setSelectedFile(null)
     setActiveProject(id)
     window.api.setSetting('active_project_id', id)
-    setLoading(true)
+    window.api.startWatcher(path)
     try {
-      const tree = await window.api.getFileTree(path)
-      setTree(tree)
+      const { rootNode } = await window.api.getFileTreeStream(path)
+      if (rootNode) {
+        useFileTreeStore.getState().startStream(rootNode)
+      }
     } catch (err) {
       console.error('Failed to load file tree:', err)
-    } finally {
-      setLoading(false)
     }
   }
 

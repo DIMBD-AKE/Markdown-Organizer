@@ -7,6 +7,9 @@ interface ViewerStore {
   toc: TocItem[]
   /** Ids of TOC headings whose children are collapsed. Reset per document. */
   collapsedTocIds: Set<string>
+  /** True while a selected file's content is being read. Lets the viewer show
+   *  its own spinner independent of the file-tree scan. */
+  isFileLoading: boolean
   scrollPos: number
   history: string[]
   historyIndex: number
@@ -14,6 +17,9 @@ interface ViewerStore {
 
   /** Open a file AND push to navigation history (use when clicking files in tree). */
   setFile(path: string, content: string): void
+  /** Mark a file as selected + loading immediately, before its content arrives.
+   *  Does NOT push history — setFile (called on resolve) owns the history push. */
+  beginFileLoad(path: string): void
   /**
    * Update the displayed file WITHOUT touching history.
    * Use after goBack() / goForward() — those already moved historyIndex;
@@ -41,6 +47,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   content: null,
   toc: [],
   collapsedTocIds: new Set(),
+  isFileLoading: false,
   scrollPos: 0,
   history: [],
   historyIndex: -1,
@@ -49,11 +56,14 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   setFile: (path, content) =>
     set((s) => {
       const history = truncateAndAppend(s.history, s.historyIndex, path)
-      return { filePath: path, content, error: null, collapsedTocIds: new Set(), history, historyIndex: history.length - 1 }
+      return { filePath: path, content, error: null, isFileLoading: false, collapsedTocIds: new Set(), history, historyIndex: history.length - 1 }
     }),
 
+  beginFileLoad: (path) =>
+    set({ filePath: path, content: null, error: null, isFileLoading: true, collapsedTocIds: new Set() }),
+
   // Just display the file — history was already updated by goBack/goForward
-  loadFile: (path, content) => set({ filePath: path, content, error: null, collapsedTocIds: new Set() }),
+  loadFile: (path, content) => set({ filePath: path, content, error: null, isFileLoading: false, collapsedTocIds: new Set() }),
 
   setToc: (toc) => set({ toc }),
   toggleTocCollapse: (id) =>
@@ -63,7 +73,7 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
       return { collapsedTocIds: next }
     }),
   setScrollPos: (scrollPos) => set({ scrollPos }),
-  setError: (error) => set({ error }),
+  setError: (error) => set({ error, isFileLoading: false }),
 
   navigateTo: (path) =>
     set((s) => {
@@ -88,5 +98,5 @@ export const useViewerStore = create<ViewerStore>((set, get) => ({
   },
 
   clearForProjectSwitch: () =>
-    set({ filePath: null, content: null, toc: [], collapsedTocIds: new Set(), scrollPos: 0, history: [], historyIndex: -1, error: null }),
+    set({ filePath: null, content: null, toc: [], collapsedTocIds: new Set(), isFileLoading: false, scrollPos: 0, history: [], historyIndex: -1, error: null }),
 }))

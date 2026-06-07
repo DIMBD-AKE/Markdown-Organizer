@@ -13,6 +13,7 @@ export default function DocumentViewer({ scrollRef }: Props) {
   const filePath = useViewerStore((s) => s.filePath)
   const content = useViewerStore((s) => s.content)
   const error = useViewerStore((s) => s.error)
+  const isFileLoading = useViewerStore((s) => s.isFileLoading)
   const setScrollPos = useViewerStore((s) => s.setScrollPos)
 
   useEffect(() => {
@@ -35,10 +36,20 @@ export default function DocumentViewer({ scrollRef }: Props) {
       <div ref={scrollRef as React.RefObject<HTMLDivElement>} onScroll={handleScroll} className="flex-1 overflow-y-auto bg-base select-text">
         {error
           ? <div className="p-8 text-red text-sm">{error}</div>
-          : content && (
+          : content
+          ? (
             <ErrorBoundary key={filePath} fallback={<div className="p-8 text-red text-sm">렌더링 오류</div>}>
               <MarkdownRenderer content={content} filePath={filePath} />
             </ErrorBoundary>
+          )
+          : isFileLoading && (
+            <div className="flex items-center justify-center gap-2 p-8 text-overlay0 text-sm">
+              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" fill="none"
+                  strokeLinecap="round" strokeDasharray="36" strokeDashoffset="18" />
+              </svg>
+              불러오는 중…
+            </div>
           )
         }
       </div>

@@ -25,6 +25,10 @@ interface FileTreeStore {
   startStream(rootNode: FileNode): void
   /** Patch the tree: set `parentPath`'s children, mark child folders as loading. */
   applyStreamNode(parentPath: string, children: FileNode[]): void
+  /** Batched form of applyStreamNode: apply many parent patches in ONE state
+   *  update. Caller coalesces rapid FILE_TREE_NODE events to avoid one React
+   *  render per directory (which starves the rest of the UI during big scans). */
+  applyStreamNodes(patches: { parentPath: string; children: FileNode[] }[]): void
   /** All folders streamed. Clear loadingDirs, drop isStreaming. */
   completeStream(): void
 }
@@ -126,6 +130,24 @@ export const useFileTreeStore = create<FileTreeStore>((set) => ({
         if (c.isDir) nextLoading.add(c.path)
       }
       return { tree: newTree, loadingDirs: nextLoading }
+    }),
+
+  applyStreamNodes: (patches) =>
+    set((s) => {
+      if (!s.tree || patches.length === 0) return {}
+      let tree = s.tree
+      const nextLoading = new Set(s.loadingDirs)
+      for (const { parentPath, children } of patches) {
+        const patched = patchChildren(tree, parentPath, children)
+        if (patched === tree && parentPath !== tree.path) continue // unknown subtree
+        tree = patched
+        nextLoading.delete(parentPath)
+        for (const c of children) {
+          if (c.isDir) nextLoading.add(c.path)
+        }
+      }
+      if (tree === s.tree) return {}
+      return { tree, loadingDirs: nextLoading }
     }),
 
   completeStream: () =>

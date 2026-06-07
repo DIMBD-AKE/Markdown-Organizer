@@ -37,14 +37,34 @@ export default function App() {
   useEffect(() => {
     // Subscribe to streaming events BEFORE invoking any stream — events emit
     // from main as soon as the first folder is read.
-    const unsubNode = window.api.onFileTreeNode(({ parentPath, children }) => {
-      useFileTreeStore.getState().applyStreamNode(parentPath, children)
+    //
+    // Coalesce node events: a large (Unity) project emits hundreds of
+    // FILE_TREE_NODE events back-to-back. Applying each as its own setState
+    // forces one full FileTree render per directory, saturating the renderer
+    // main thread so a clicked file's content can't paint until the scan ends.
+    // Buffer patches and flush at most once per animation frame.
+    let nodeBuffer: { parentPath: string; children: import('./types').FileNode[] }[] = []
+    let flushRaf = 0
+    const flushNodes = () => {
+      flushRaf = 0
+      if (nodeBuffer.length === 0) return
+      const batch = nodeBuffer
+      nodeBuffer = []
+      useFileTreeStore.getState().applyStreamNodes(batch)
+    }
+    const unsubNode = window.api.onFileTreeNode((patch) => {
+      nodeBuffer.push(patch)
+      if (!flushRaf) flushRaf = requestAnimationFrame(flushNodes)
     })
     const unsubComplete = window.api.onFileTreeComplete(() => {
+      if (flushRaf) cancelAnimationFrame(flushRaf)
+      flushNodes() // drain any buffered patches before pruning
       useFileTreeStore.getState().completeStream()
     })
     const unsubErr = window.api.onFileTreeError(({ error }) => {
       console.error('File tree stream error:', error)
+      if (flushRaf) cancelAnimationFrame(flushRaf)
+      flushNodes()
       useFileTreeStore.getState().completeStream()
     })
 
@@ -65,11 +85,16 @@ export default function App() {
                 useFileTreeStore.getState().startStream(rootNode)
               }
               if (ps.lastFile) {
-                // Independent of stream — file content load doesn't need tree
-                const { content } = await window.api.readFile(ps.lastFile)
+                // Independent of stream — file content load doesn't need tree.
+                // Mark loading first so the viewer shows a spinner immediately,
+                // not a blank pane, while the read is in flight.
+                useViewerStore.getState().beginFileLoad(ps.lastFile)
+                useFileTreeStore.getState().setSelectedFile(ps.lastFile)
+                const { content, error } = await window.api.readFile(ps.lastFile)
                 if (content) {
                   useViewerStore.getState().setFile(ps.lastFile, content)
-                  useFileTreeStore.getState().setSelectedFile(ps.lastFile)
+                } else {
+                  useViewerStore.getState().setError(error ?? '파일을 읽을 수 없습니다')
                 }
               }
             } catch (err) {
@@ -117,6 +142,7 @@ export default function App() {
     window.addEventListener('beforeunload', saveState)
     return () => {
       window.removeEventListener('beforeunload', saveState)
+      if (flushRaf) cancelAnimationFrame(flushRaf)
       unsubNode()
       unsubComplete()
       unsubErr()

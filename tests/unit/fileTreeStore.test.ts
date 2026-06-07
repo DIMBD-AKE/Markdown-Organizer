@@ -164,6 +164,29 @@ describe('pruneEmptyDirs', () => {
   })
 })
 
+describe('applyStreamNodes (batched)', () => {
+  it('applies multiple parent patches in a single call', () => {
+    const store = useFileTreeStore.getState()
+    const root: FileNode = { name: 'r', path: '/r', isDir: true, modifiedAt: 0, children: [] }
+    store.startStream(root)
+    store.applyStreamNodes([
+      { parentPath: '/r', children: [
+        { name: 'a', path: '/r/a', isDir: true, modifiedAt: 0, children: [] },
+        { name: 'b', path: '/r/b', isDir: true, modifiedAt: 0, children: [] },
+      ] },
+      { parentPath: '/r/a', children: [file('/r/a/x.md', 'x.md')] },
+      { parentPath: '/r/b', children: [file('/r/b/y.md', 'y.md')] },
+    ])
+    const tree = useFileTreeStore.getState().tree!
+    expect(tree.children!.find((c) => c.name === 'a')!.children![0].name).toBe('x.md')
+    expect(tree.children!.find((c) => c.name === 'b')!.children![0].name).toBe('y.md')
+    // loadingDirs cleared for patched parents, none re-added (a, b have no child dirs)
+    const loading = useFileTreeStore.getState().loadingDirs
+    expect(loading.has('/r/a')).toBe(false)
+    expect(loading.has('/r/b')).toBe(false)
+  })
+})
+
 describe('completeStream', () => {
   it('prunes empty dirs from the tree when streaming finishes', () => {
     const store = useFileTreeStore.getState()

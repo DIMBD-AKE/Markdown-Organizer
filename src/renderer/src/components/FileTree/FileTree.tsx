@@ -36,6 +36,7 @@ export default function FileTree() {
   const isStreaming = useFileTreeStore((s) => s.isStreaming)
   const selectedFile = useFileTreeStore((s) => s.selectedFile)
   const setFile = useViewerStore((s) => s.setFile)
+  const beginFileLoad = useViewerStore((s) => s.beginFileLoad)
   const setError = useViewerStore((s) => s.setError)
   const sortField = useUiStore((s) => s.sortField)
   const sortOrder = useUiStore((s) => s.sortOrder)
@@ -74,6 +75,8 @@ export default function FileTree() {
       return
     }
     setSelectedFile(node.path)
+    // Show the viewer spinner instantly — decoupled from the file-tree scan.
+    beginFileLoad(node.path)
     try {
       const { content, error } = await window.api.readFile(node.path)
       if (error || content === null) {
@@ -84,7 +87,7 @@ export default function FileTree() {
     } catch (err) {
       setError(err instanceof Error ? err.message : '파일을 읽을 수 없습니다')
     }
-  }, [toggleDir, setSelectedFile, setFile, setError])
+  }, [toggleDir, setSelectedFile, beginFileLoad, setFile, setError])
 
   if (items.length === 0) {
     if (isStreaming) {

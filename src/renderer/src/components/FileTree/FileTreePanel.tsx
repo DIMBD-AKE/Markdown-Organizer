@@ -10,7 +10,8 @@ const SELECT_CLASS =
 
 export default function FileTreePanel() {
   const { activeProjectId } = useProjectStore()
-  const { isLoading } = useFileTreeStore()
+  const isLoading = useFileTreeStore((s) => s.isLoading)
+  const isStreaming = useFileTreeStore((s) => s.isStreaming)
   const sortField = useUiStore((s) => s.sortField)
   const sortOrder = useUiStore((s) => s.sortOrder)
   const virtualGrouping = useUiStore((s) => s.virtualGrouping)
@@ -37,8 +38,14 @@ export default function FileTreePanel() {
     <div className="flex flex-col w-full h-full bg-mantle border-r border-surface0 overflow-hidden">
       <div className="px-3 py-2 border-b border-surface0 flex flex-col gap-2">
         <div className="flex items-center justify-between">
-          <span className="text-[10px] font-semibold text-overlay0 uppercase tracking-widest">
+          <span className="text-[10px] font-semibold text-overlay0 uppercase tracking-widest flex items-center gap-1.5">
             파일
+            {isStreaming && (
+              <svg className="animate-spin h-3 w-3 text-amber" viewBox="0 0 24 24" aria-label="탐색 중">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" fill="none"
+                  strokeLinecap="round" strokeDasharray="36" strokeDashoffset="18" />
+              </svg>
+            )}
           </span>
           <button
             onClick={onToggleGroup}
@@ -65,6 +72,12 @@ export default function FileTreePanel() {
           </div>
         )}
       </div>
+
+      {/* Indeterminate scan progress bar — visible for the whole deep scan,
+          not just while the tree is empty. */}
+      {isStreaming && (
+        <div className="ft-loading-bar bg-surface0"><span /></div>
+      )}
 
       {!activeProjectId ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-2 p-4">
