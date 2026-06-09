@@ -3,12 +3,13 @@ import { create } from 'zustand'
 import type { SortField, SortOrder } from '../utils/sortTree'
 
 export type SidebarTab = 'files' | 'search' | 'settings'
+export type Theme = 'dark' | 'black' | 'latte' | 'claude' | 'codex'
 
 const DEFAULT_FILE_TREE_WIDTH = 220
 const DEFAULT_TOC_WIDTH = 200
 
 interface UiStore {
-  theme: 'dark' | 'black' | 'latte'
+  theme: Theme
   sidebarTab: SidebarTab
   fileTreeWidth: number
   tocWidth: number
@@ -17,7 +18,7 @@ interface UiStore {
   sortField: SortField
   sortOrder: SortOrder
   virtualGrouping: boolean
-  setTheme(theme: 'dark' | 'black' | 'latte'): void
+  setTheme(theme: Theme): void
   setSidebarTab(tab: SidebarTab): void
   setFileTreeWidth(w: number): void
   setTocWidth(w: number): void

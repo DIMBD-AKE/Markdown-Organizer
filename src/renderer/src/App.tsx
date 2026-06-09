@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useProjectStore } from './stores/projectStore'
-import { useUiStore } from './stores/uiStore'
+import { useUiStore, type Theme } from './stores/uiStore'
 import { useFileTreeStore } from './stores/fileTreeStore'
 import { useViewerStore } from './stores/viewerStore'
 import { useFileWatcher } from './hooks/useFileWatcher'
@@ -70,7 +70,7 @@ export default function App() {
 
     window.api.getAppState().then(async (state) => {
       setProjects(state.projects)
-      setTheme(state.theme as 'dark' | 'black' | 'latte')
+      setTheme(state.theme as Theme)
 
       if (state.activeProjectId) {
         setActiveProject(state.activeProjectId)

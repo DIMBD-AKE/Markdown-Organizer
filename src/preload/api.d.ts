@@ -8,7 +8,7 @@ declare global {
       closeWindow(): Promise<void>
       minimizeWindow(): Promise<void>
       toggleMaximize(): Promise<void>
-      setTitleBarOverlay(theme: 'dark' | 'black' | 'latte'): Promise<void>
+      setTitleBarOverlay(theme: 'dark' | 'black' | 'latte' | 'claude' | 'codex'): Promise<void>
 
       selectFolder(): Promise<string | null>
       addProject(folderPath: string): Promise<Project>
@@ -33,6 +33,7 @@ declare global {
 
       searchFiles(query: SearchQuery): Promise<{ results: SearchResult[]; error?: string }>
 
+      getAppVersion(): Promise<string>
       checkForUpdates(): Promise<void>
       installUpdate(): Promise<void>
       onUpdateAvailable(cb: (info: unknown) => void): () => void

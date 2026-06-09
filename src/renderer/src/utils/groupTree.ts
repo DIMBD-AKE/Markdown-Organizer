@@ -38,9 +38,15 @@ function virtualNode(parentPath: string, key: string, label: string, children: F
 
 /**
  * Build presentational virtual-folder groups from filename patterns, per real
- * directory. Date prefixes take priority over common text prefixes. A group is
- * created only when 2+ files share a key; lone files stay loose. Recurses into
- * real subdirectories. Pure / immutable. Output ordered via {@link sortTree}.
+ * directory. Date prefixes take priority over common text prefixes.
+ *
+ * Date grouping triggers on the *format*, not the value: when 2+ files in a
+ * directory match the date format, every distinct date becomes its own group —
+ * including singleton dates. Only when a lone dated file is the sole match does
+ * it stay loose. Common-prefix grouping still requires 2+ files sharing a key.
+ *
+ * Recurses into real subdirectories. Pure / immutable. Output ordered via
+ * {@link sortTree}.
  */
 export function groupTree(
   nodes: FileNode[],
@@ -88,8 +94,12 @@ export function groupTree(
   const virtuals: FileNode[] = []
   const loose: FileNode[] = []
 
+  // Group on the date *format*: if 2+ files in this directory carry a date,
+  // every date becomes a group (singletons included). A lone dated file with no
+  // sibling date stays loose.
+  const datedFormatQualifies = files.length - remaining.length >= 2
   for (const [key, arr] of dateGroups) {
-    if (arr.length >= 2) {
+    if (datedFormatQualifies) {
       virtuals.push(virtualNode(parentPath, `date:${key}`, key, sortTree(arr, field, order)))
     } else {
       loose.push(...arr)

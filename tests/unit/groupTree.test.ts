@@ -29,6 +29,25 @@ describe('groupTree', () => {
     expect(out[0].children).toHaveLength(3)
   })
 
+  it('groups every date when 2+ files share the date format, singletons included', () => {
+    const out = groupTree(
+      [
+        file('2026-05-30-work1.md'),
+        file('2026-05-30-work2.md'),
+        file('2026-06-12-work1.md'),
+      ],
+      '/root',
+      'name',
+      'asc'
+    )
+    // Two date groups: the shared 05-30 and the lone 06-12.
+    expect(out.every((n) => n.isVirtual)).toBe(true)
+    const may = out.find((n) => n.name === '2026-05-30')
+    const jun = out.find((n) => n.name === '2026-06-12')
+    expect(may?.children).toHaveLength(2)
+    expect(jun?.children).toHaveLength(1)
+  })
+
   it('does not group a lone matching file', () => {
     const out = groupTree([file('2026-06-05-agent.md')], '/root', 'name', 'asc')
     expect(out).toHaveLength(1)

@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('api', {
   closeWindow: () => ipcRenderer.invoke(IPC.CLOSE_WINDOW),
   minimizeWindow: () => ipcRenderer.invoke(IPC.MINIMIZE_WINDOW),
   toggleMaximize: () => ipcRenderer.invoke(IPC.TOGGLE_MAXIMIZE),
-  setTitleBarOverlay: (theme: 'dark' | 'black' | 'latte') =>
+  setTitleBarOverlay: (theme: 'dark' | 'black' | 'latte' | 'claude' | 'codex') =>
     ipcRenderer.invoke(IPC.SET_TITLE_BAR_OVERLAY, theme),
 
   selectFolder: () => ipcRenderer.invoke(IPC.SELECT_FOLDER),
@@ -50,6 +50,7 @@ contextBridge.exposeInMainWorld('api', {
 
   searchFiles: (query: unknown) => ipcRenderer.invoke(IPC.SEARCH_FILES, query),
 
+  getAppVersion: () => ipcRenderer.invoke(IPC.GET_APP_VERSION),
   checkForUpdates: () => ipcRenderer.invoke(IPC.CHECK_FOR_UPDATES),
   installUpdate: () => ipcRenderer.invoke(IPC.INSTALL_UPDATE),
 

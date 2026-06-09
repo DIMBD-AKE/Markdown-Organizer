@@ -1,14 +1,16 @@
 import { ipcMain, BrowserWindow } from 'electron'
 import { IPC } from './channels'
 
-export type ThemeName = 'dark' | 'black' | 'latte'
+export type ThemeName = 'dark' | 'black' | 'latte' | 'claude' | 'codex'
 
 // Mantle (header bg) + text-token colors per theme. Mirror of CSS vars in
 // renderer/src/index.css — keep in sync if a theme is added/changed.
 export const THEME_OVERLAY: Record<ThemeName, { color: string; symbolColor: string }> = {
-  dark:  { color: '#181825', symbolColor: '#cdd6f4' },
-  black: { color: '#0a0a0a', symbolColor: '#cdd6f4' },
-  latte: { color: '#e6e9ef', symbolColor: '#4c4f69' },
+  dark:   { color: '#181825', symbolColor: '#cdd6f4' },
+  black:  { color: '#0a0a0a', symbolColor: '#cdd6f4' },
+  latte:  { color: '#e6e9ef', symbolColor: '#4c4f69' },
+  claude: { color: '#f2f0e9', symbolColor: '#141413' },
+  codex:  { color: '#1a1b1d', symbolColor: '#f5f7fa' },
 }
 
 export function applyTitleBarOverlay(win: BrowserWindow, theme: ThemeName): void {

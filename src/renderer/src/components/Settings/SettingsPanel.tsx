@@ -1,10 +1,12 @@
-import { useUiStore } from '../../stores/uiStore'
+import { useUiStore, type Theme } from '../../stores/uiStore'
 import { useState, useEffect } from 'react'
 
-const THEMES: Array<{ id: 'dark' | 'black' | 'latte'; label: string; bg: string; text: string }> = [
-  { id: 'dark',  label: 'Mocha',  bg: '#1e1e2e', text: '#cdd6f4' },
-  { id: 'black', label: 'Black',  bg: '#000000', text: '#cdd6f4' },
-  { id: 'latte', label: 'Latte',  bg: '#eff1f5', text: '#4c4f69' },
+const THEMES: Array<{ id: Theme; label: string; bg: string; text: string }> = [
+  { id: 'dark',   label: 'Mocha',  bg: '#1e1e2e', text: '#cdd6f4' },
+  { id: 'black',  label: 'Black',  bg: '#000000', text: '#cdd6f4' },
+  { id: 'latte',  label: 'Latte',  bg: '#eff1f5', text: '#4c4f69' },
+  { id: 'claude', label: 'Claude', bg: '#faf9f5', text: '#141413' },
+  { id: 'codex',  label: 'Codex',  bg: '#202123', text: '#f5f7fa' },
 ]
 
 type UpdateStatus = 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'ready' | 'error'
@@ -15,10 +17,20 @@ export default function SettingsPanel() {
 
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle')
   const [updateError, setUpdateError] = useState<string>('')
+  const [appVersion, setAppVersion] = useState<string>('')
+  const [latestVersion, setLatestVersion] = useState<string>('')
+
+  useEffect(() => {
+    window.api.getAppVersion?.().then(setAppVersion)
+  }, [])
 
   useEffect(() => {
     const unsubs = [
-      window.api.onUpdateAvailable?.(() => setUpdateStatus('available')),
+      window.api.onUpdateAvailable?.((info: unknown) => {
+        setUpdateStatus('available')
+        const v = (info as { version?: string } | null)?.version
+        if (v) setLatestVersion(v)
+      }),
       window.api.onUpdateNotAvailable?.(() => setUpdateStatus('not-available')),
       window.api.onUpdateProgress?.(() => setUpdateStatus('downloading')),
       window.api.onUpdateDownloaded?.(() => setUpdateStatus('ready')),
@@ -27,7 +39,7 @@ export default function SettingsPanel() {
     return () => unsubs.forEach((u) => u?.())
   }, [])
 
-  function handleTheme(id: 'dark' | 'black' | 'latte') {
+  function handleTheme(id: Theme) {
     setTheme(id)
     window.api.setSetting('theme', id)
   }
@@ -86,6 +98,10 @@ export default function SettingsPanel() {
 
         <div>
           <div className="text-[10px] text-overlay0 uppercase tracking-widest mb-2">업데이트</div>
+          <div className="flex items-center justify-between px-0.5 pb-2 text-[11px]">
+            <span className="text-subtext0">현재 버전</span>
+            <span className="text-text font-mono">v{appVersion || '—'}</span>
+          </div>
           <button
             onClick={updateStatus === 'ready' ? handleInstallUpdate : handleCheckUpdate}
             disabled={updateStatus === 'checking' || updateStatus === 'available' || updateStatus === 'downloading'}
@@ -96,6 +112,11 @@ export default function SettingsPanel() {
           </button>
           {updateStatus === 'not-available' && (
             <p className="text-[11px] text-subtext0 mt-1 text-center">최신 버전을 사용 중입니다</p>
+          )}
+          {(updateStatus === 'available' || updateStatus === 'downloading' || updateStatus === 'ready') && latestVersion && (
+            <p className="text-[11px] text-amber mt-1 text-center">
+              최신 버전 v{latestVersion} 사용 가능
+            </p>
           )}
           {updateStatus === 'error' && (
             <p className="text-[11px] text-red mt-1 text-center truncate">{updateError}</p>

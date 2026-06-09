@@ -97,6 +97,50 @@
   --color-amber-soft: rgba(223, 142, 29, 0.10);
 }
 
+/* ── Claude (Anthropic — warm cream, coral accent) ───────── */
+.theme-claude {
+  color-scheme: light;
+  --color-base:       #faf9f5;
+  --color-mantle:     #f2f0e9;
+  --color-crust:      #e9e6dc;
+  --color-surface0:   #ddd9cc;
+  --color-surface1:   #c9c4b4;
+  --color-overlay0:   #8a8578;
+  --color-text:       #141413;
+  --color-subtext0:   #5a564e;
+  --color-lavender:   #a18ac4;
+  --color-mauve:      #8a6fb0;
+  --color-blue:       #6a9bcc;
+  --color-green:      #4a8a5c;
+  --color-yellow:     #c79545;
+  --color-red:        #c44536;
+  --color-teal:       #5f9ea0;
+  --color-amber:      #d97757;
+  --color-amber-soft: rgba(217, 119, 87, 0.10);
+}
+
+/* ── Codex (OpenAI — near-black, teal accent) ────────────── */
+.theme-codex {
+  color-scheme: dark;
+  --color-base:       #202123;
+  --color-mantle:     #1a1b1d;
+  --color-crust:      #161719;
+  --color-surface0:   #303134;
+  --color-surface1:   #3a3b3f;
+  --color-overlay0:   #777b85;
+  --color-text:       #f5f7fa;
+  --color-subtext0:   #b4b8c0;
+  --color-lavender:   #94b4ff;
+  --color-mauve:      #b790ff;
+  --color-blue:       #2b8fff;
+  --color-green:      #10a37f;
+  --color-yellow:     #f7c66a;
+  --color-red:        #ff7a85;
+  --color-teal:       #10a37f;
+  --color-amber:      #1bb890;
+  --color-amber-soft: rgba(16, 163, 127, 0.12);
+}
+
 /* ── Search highlight marks ──────────────────────────────── */
 mark.search-mark {
   background: rgba(249, 226, 175, 0.30);

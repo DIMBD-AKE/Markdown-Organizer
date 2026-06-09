@@ -22,6 +22,7 @@ export const IPC = {
   TOGGLE_MAXIMIZE:      'toggle-maximize',
   SET_TITLE_BAR_OVERLAY: 'set-title-bar-overlay',
   SEARCH_FILES:         'search-files',
+  GET_APP_VERSION:      'get-app-version',
   CHECK_FOR_UPDATES:    'check-for-updates',
   INSTALL_UPDATE:       'install-update',
   UPDATE_AVAILABLE:     'update-available',
