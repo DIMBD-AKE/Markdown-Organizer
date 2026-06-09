@@ -11,6 +11,9 @@ All notable changes to Markdown Organizer are documented here.
 - **설정 — 앱 버전 표시** — 설정 패널 업데이트 섹션에 현재 버전(`v1.2.1`) 상시 표시. 업데이트 확인 시 발견된 최신 버전 번호를 함께 안내.
 - **테마 — Claude / Codex 추가** — 따뜻한 크림 + 코랄 액센트(Claude, 라이트)와 near-black + teal 액센트(Codex, 다크) 테마 추가. AN-PIP와 동일한 팔레트로 세트 구성.
 
+### Fixed
+- **자동 업데이트 메타데이터 누락 (재수정)** — 릴리스 워크플로가 발행된(non-draft) 릴리스를 먼저 만든 뒤 `electron-builder --publish always`를 실행하는데, electron-builder의 기본 `publishingType=draft`가 기존 발행 릴리스와 호환되지 않아 `latest*.yml` 업로드를 전부 건너뛰었음(설치 파일만 별도 수동 업로드 스텝으로 올라가던 상황). 수동 업로드 스텝에 `latest*.yml`·`*.blockmap` glob을 추가해 매니페스트가 릴리스에 함께 업로드되도록 수정.
+
 ## [1.2.0] — 2026-06-07
 
 ### Added

@@ -95,5 +95,12 @@ jobs:
               gh release upload "$GITHUB_REF_NAME" "$f" --clobber
             done
           fi
+          # Auto-update manifests + delta blockmaps. electron-builder's own
+          # --publish skips these when the release already exists as a
+          # non-draft (publishingType=draft mismatch), so upload them here.
+          # Without latest*.yml the auto-updater has no manifest to compare.
+          find dist -maxdepth 1 \( -name "latest*.yml" -o -name "*.blockmap" \) | while IFS= read -r f; do
+            gh release upload "$GITHUB_REF_NAME" "$f" --clobber
+          done
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
