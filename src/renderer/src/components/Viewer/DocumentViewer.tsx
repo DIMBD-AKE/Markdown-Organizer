@@ -1,10 +1,23 @@
 import { useViewerStore } from '../../stores/viewerStore'
+import { useSearchStore } from '../../stores/searchStore'
 import DocHeader from './DocHeader'
 import MarkdownRenderer from './MarkdownRenderer'
 import ErrorBoundary from '../ErrorBoundary'
 import React, { useEffect } from 'react'
 
 interface Props { scrollRef: React.RefObject<HTMLDivElement | null> }
+
+/** Saved-scroll restore must yield to a search-driven open: when the file being
+ *  opened is the active search target with a live query, MarkdownRenderer scrolls
+ *  to the match, so restoring the persisted scrollPos here would clobber that jump. */
+export function shouldRestoreScroll(
+  filePath: string | null,
+  searchActiveFilePath: string | null,
+  searchQuery: string
+): boolean {
+  if (searchActiveFilePath === filePath && searchQuery.trim()) return false
+  return true
+}
 
 export default function DocumentViewer({ scrollRef }: Props) {
   // Use individual selectors — calling useViewerStore() with no selector subscribes
@@ -17,9 +30,10 @@ export default function DocumentViewer({ scrollRef }: Props) {
   const setScrollPos = useViewerStore((s) => s.setScrollPos)
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = useViewerStore.getState().scrollPos
-    }
+    if (!scrollRef.current) return
+    const search = useSearchStore.getState()
+    if (!shouldRestoreScroll(filePath, search.activeFilePath, search.query)) return
+    scrollRef.current.scrollTop = useViewerStore.getState().scrollPos
   }, [filePath])
 
   function handleScroll(e: React.UIEvent<HTMLDivElement>) {
