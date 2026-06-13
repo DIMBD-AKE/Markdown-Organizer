@@ -1,9 +1,6 @@
 import type { FileNode } from '../types'
 import { sortTree, type SortField, type SortOrder } from './sortTree'
 
-/** Day-group count above which date groups roll up to month granularity. */
-const MONTH_ROLLUP_THRESHOLD = 12
-
 const DATE_RE = /^(\d{4})[-_.]?(\d{2})[-_.]?(\d{2})(?:\D|$)/
 
 /** Extract a normalized `YYYY-MM-DD` date key from a filename, or null. */
@@ -34,6 +31,40 @@ function virtualNode(parentPath: string, key: string, label: string, children: F
     mdCount: children.length,
     modifiedAt: children.reduce((max, c) => Math.max(max, c.modifiedAt), 0),
   }
+}
+
+/**
+ * Recursively build nested date virtual-folder groups from `YYYY-MM-DD` keys.
+ * `levels` lists the key prefix lengths per depth, outermost first — e.g.
+ * `[4, 7, 10]` nests year → month → day, `[7, 10]` month → day, `[10]` is a
+ * flat list of day groups. The final level always uses the full day key.
+ */
+function buildDateGroups(
+  entries: Array<[string, FileNode[]]>,
+  parentPath: string,
+  levels: number[],
+  field: SortField,
+  order: SortOrder
+): FileNode[] {
+  // Leaf: each entry is a day group.
+  if (levels.length === 1) {
+    return entries.map(([key, arr]) =>
+      virtualNode(parentPath, `date:${key}`, key, sortTree(arr, field, order))
+    )
+  }
+  const len = levels[0]
+  const groups = new Map<string, Array<[string, FileNode[]]>>()
+  for (const entry of entries) {
+    const prefix = entry[0].slice(0, len)
+    groups.set(prefix, [...(groups.get(prefix) ?? []), entry])
+  }
+  const out: FileNode[] = []
+  for (const [prefix, sub] of groups) {
+    const path = `${parentPath}::group::date:${prefix}`
+    const children = buildDateGroups(sub, path, levels.slice(1), field, order)
+    out.push(virtualNode(parentPath, `date:${prefix}`, prefix, sortTree(children, field, order)))
+  }
+  return out
 }
 
 /**
@@ -78,19 +109,6 @@ export function groupTree(
     }
   }
 
-  // Month rollup when too many distinct day groups.
-  let dateGroups = dated
-  let dateGranularity: 'day' | 'month' = 'day'
-  if (dated.size > MONTH_ROLLUP_THRESHOLD) {
-    const monthly = new Map<string, FileNode[]>()
-    for (const [key, arr] of dated) {
-      const month = key.slice(0, 7)
-      monthly.set(month, [...(monthly.get(month) ?? []), ...arr])
-    }
-    dateGroups = monthly
-    dateGranularity = 'month'
-  }
-
   const virtuals: FileNode[] = []
   const loose: FileNode[] = []
 
@@ -98,15 +116,19 @@ export function groupTree(
   // every date becomes a group (singletons included). A lone dated file with no
   // sibling date stays loose.
   const datedFormatQualifies = files.length - remaining.length >= 2
-  for (const [key, arr] of dateGroups) {
-    if (datedFormatQualifies) {
-      virtuals.push(virtualNode(parentPath, `date:${key}`, key, sortTree(arr, field, order)))
-    } else {
-      loose.push(...arr)
-    }
+
+  if (!datedFormatQualifies) {
+    for (const arr of dated.values()) loose.push(...arr)
+  } else {
+    // Pick nesting depth by how spread the dates are:
+    //   2+ years  → year → month → day
+    //   2+ months → month → day
+    //   else      → flat day groups
+    const years = new Set([...dated.keys()].map((k) => k.slice(0, 4)))
+    const months = new Set([...dated.keys()].map((k) => k.slice(0, 7)))
+    const levels = years.size >= 2 ? [4, 7, 10] : months.size >= 2 ? [7, 10] : [10]
+    virtuals.push(...buildDateGroups([...dated], parentPath, levels, field, order))
   }
-  // Date granularity unused beyond key length; retained for clarity.
-  void dateGranularity
 
   // 2. Common-prefix grouping for the rest.
   const byPrefix = new Map<string, FileNode[]>()

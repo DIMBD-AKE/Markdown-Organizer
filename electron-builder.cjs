@@ -21,10 +21,15 @@ module.exports = {
     repo: 'Markdown-Organizer',
   },
 
+  // Space-free artifact names. productName ("Markdown Organizer") has a space;
+  // GitHub rewrites spaces to dots on asset upload, so the file referenced by
+  // latest*.yml (which keeps a hyphen) 404s and the auto-updater silently finds
+  // nothing. Hyphenated names keep yml urls and uploaded assets identical.
   mac: {
     // M9: zip target replaces dmg — ad-hoc sign survives zip archiving,
     // DMG layer added no Gatekeeper benefit while needing dmg-builder Python.
     target: [{ target: 'zip', arch: ['x64', 'arm64'] }],
+    artifactName: 'Markdown-Organizer-${version}-${arch}-mac.${ext}',
     icon: 'build/icon.png',
     category: 'public.app-category.productivity',
     darkModeSupport: true,
@@ -46,10 +51,15 @@ module.exports = {
     perMachine: false,
     deleteAppDataOnUninstall: false,
     shortcutName: 'Markdown Organizer',
+    artifactName: 'Markdown-Organizer-Setup-${version}.${ext}',
+  },
+  portable: {
+    artifactName: 'Markdown-Organizer-${version}-portable.${ext}',
   },
 
   linux: {
     target: [{ target: 'AppImage', arch: ['x64'] }],
+    artifactName: 'Markdown-Organizer-${version}.${ext}',
     icon: 'build/icon.png',
     category: 'Office',
     description: 'Desktop app for managing AI-generated Markdown documents',
