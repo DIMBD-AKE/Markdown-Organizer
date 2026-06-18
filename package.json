@@ -1,6 +1,6 @@
 {
   "name": "markdown-organizer",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Desktop app for managing AI-generated Markdown documents",
   "main": "./out/main/index.js",
   "author": {

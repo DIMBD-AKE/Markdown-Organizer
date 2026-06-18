@@ -31,4 +31,36 @@ describe('extractToc', () => {
   it('returns empty array for no headings', () => {
     expect(extractToc('Just some text.')).toEqual([])
   })
+
+  it('ignores headings inside fenced code blocks', () => {
+    const md = [
+      '# Real Heading',
+      '',
+      '```markdown',
+      '# Fake Heading In Code',
+      '## Another Fake',
+      '```',
+      '',
+      '## Real Sub'
+    ].join('\n')
+    const toc = extractToc(md)
+    expect(toc).toHaveLength(1)
+    expect(toc[0].text).toBe('Real Heading')
+    expect(toc[0].children).toHaveLength(1)
+    expect(toc[0].children[0].text).toBe('Real Sub')
+  })
+
+  it('handles tilde fences and ignores mismatched fence chars', () => {
+    const md = [
+      '# Top',
+      '~~~',
+      '# In Tilde Fence',
+      '~~~',
+      '## Bottom'
+    ].join('\n')
+    const toc = extractToc(md)
+    expect(toc[0].text).toBe('Top')
+    expect(toc[0].children).toHaveLength(1)
+    expect(toc[0].children[0].text).toBe('Bottom')
+  })
 })
