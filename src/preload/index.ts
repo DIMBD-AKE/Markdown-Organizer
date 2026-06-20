@@ -38,8 +38,8 @@ contextBridge.exposeInMainWorld('api', {
   getSetting: (key: string) => ipcRenderer.invoke(IPC.GET_SETTING, key),
   setSetting: (key: string, value: string) => ipcRenderer.invoke(IPC.SET_SETTING, key, value),
 
-  onFileChanged: (cb: (payload: { type: string; path: string }) => void) => {
-    const listener = (_e: Electron.IpcRendererEvent, payload: { type: string; path: string }) => cb(payload)
+  onFileChanged: (cb: (payload: { events: { type: string; path: string }[] }) => void) => {
+    const listener = (_e: Electron.IpcRendererEvent, payload: { events: { type: string; path: string }[] }) => cb(payload)
     ipcRenderer.on(IPC.FILE_CHANGED, listener)
     return () => ipcRenderer.removeListener(IPC.FILE_CHANGED, listener)
   },

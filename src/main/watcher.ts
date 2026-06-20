@@ -82,8 +82,13 @@ export function startWatcher(projectPath: string, win: BrowserWindow): void {
     awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 },
   })
 
+  // Send the whole batch in ONE message. The renderer rebuilds the entire
+  // file tree per message, so emitting one message per event turned a burst
+  // of N files into N full recursive disk walks — CPU spike / crash on large
+  // projects. One batched message = one tree rebuild, while still carrying
+  // every changed path so the open-document refresh isn't lost.
   const batcher = createEventBatcher(200, (events) => {
-    for (const ev of events) win.webContents.send('file-changed', ev)
+    win.webContents.send('file-changed', { events })
   })
   cancelBatch = batcher.cancel
 

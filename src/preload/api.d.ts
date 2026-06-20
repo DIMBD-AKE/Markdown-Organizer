@@ -26,7 +26,7 @@ declare global {
       getSetting(key: string): Promise<string | null>
       setSetting(key: string, value: string): Promise<void>
 
-      onFileChanged(cb: (payload: { type: string; path: string }) => void): () => void
+      onFileChanged(cb: (payload: { events: { type: string; path: string }[] }) => void): () => void
       startWatcher(projectPath: string): Promise<void>
       openPath(targetPath: string): Promise<void>
       openExternal(url: string): Promise<void>
