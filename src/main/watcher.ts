@@ -4,6 +4,54 @@ import type { BrowserWindow } from 'electron'
 import { EXCLUDED_DIRS, UNITY_EXCLUDED, isUnityProjectSync } from './projectFilters'
 
 let watcher: FSWatcher | null = null
+let cancelBatch: (() => void) | null = null
+
+export type FileEventType = 'add' | 'change' | 'unlink'
+export type FileEvent = { type: FileEventType; path: string }
+
+/**
+ * Coalesces a burst of fs events into batched flushes.
+ *
+ * The old inline debounce had two bugs that made the UI "sometimes" miss
+ * updates:
+ *   1. It reset the timer on every event, so a continuous stream of changes
+ *      arriving <waitMs apart (Dropbox sync, an editor's multi-write save, a
+ *      folder copy) never flushed until the stream went quiet.
+ *   2. It carried only the LAST event's {type,path} in a closure, so when a
+ *      sibling file's event landed last, the change to the open document was
+ *      silently dropped.
+ *
+ * This batcher uses a leading-edge timer (the first event arms a fixed window;
+ * later events join the batch WITHOUT resetting it) so a continuous stream
+ * still flushes within waitMs. It keys pending events by path so every
+ * distinct path survives, with the latest type per path winning.
+ */
+export function createEventBatcher(
+  waitMs: number,
+  flush: (events: FileEvent[]) => void
+): { push: (type: FileEventType, filePath: string) => void; cancel: () => void } {
+  const pending = new Map<string, FileEventType>()
+  let timer: ReturnType<typeof setTimeout> | null = null
+
+  const fire = (): void => {
+    timer = null
+    const batch: FileEvent[] = Array.from(pending, ([p, type]) => ({ type, path: p }))
+    pending.clear()
+    if (batch.length) flush(batch)
+  }
+
+  return {
+    push(type, filePath) {
+      pending.set(filePath, type)
+      if (!timer) timer = setTimeout(fire, waitMs)
+    },
+    cancel() {
+      if (timer) clearTimeout(timer)
+      timer = null
+      pending.clear()
+    }
+  }
+}
 
 export function startWatcher(projectPath: string, win: BrowserWindow): void {
   stopWatcher()
@@ -27,8 +75,6 @@ export function startWatcher(projectPath: string, win: BrowserWindow): void {
     return false
   }
 
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null
-
   watcher = chokidar.watch(projectPath, {
     ignored,
     ignoreInitial: true,
@@ -36,21 +82,21 @@ export function startWatcher(projectPath: string, win: BrowserWindow): void {
     awaitWriteFinish: { stabilityThreshold: 200, pollInterval: 100 },
   })
 
-  const emit = (type: 'add' | 'change' | 'unlink', filePath: string) => {
-    if (debounceTimer) clearTimeout(debounceTimer)
-    debounceTimer = setTimeout(() => {
-      win.webContents.send('file-changed', { type, path: filePath })
-    }, 200)
-  }
+  const batcher = createEventBatcher(200, (events) => {
+    for (const ev of events) win.webContents.send('file-changed', ev)
+  })
+  cancelBatch = batcher.cancel
 
-  watcher.on('add', (p) => emit('add', p))
-  watcher.on('change', (p) => emit('change', p))
-  watcher.on('unlink', (p) => emit('unlink', p))
-  watcher.on('addDir', (p) => emit('add', p))
-  watcher.on('unlinkDir', (p) => emit('unlink', p))
+  watcher.on('add', (p) => batcher.push('add', p))
+  watcher.on('change', (p) => batcher.push('change', p))
+  watcher.on('unlink', (p) => batcher.push('unlink', p))
+  watcher.on('addDir', (p) => batcher.push('add', p))
+  watcher.on('unlinkDir', (p) => batcher.push('unlink', p))
 }
 
 export function stopWatcher(): void {
+  cancelBatch?.()
+  cancelBatch = null
   watcher?.close()
   watcher = null
 }
