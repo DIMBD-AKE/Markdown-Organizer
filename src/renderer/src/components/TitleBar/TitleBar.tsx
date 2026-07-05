@@ -2,8 +2,8 @@ import React, { useState } from 'react'
 import { useProjectStore } from '../../stores/projectStore'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import { useViewerStore } from '../../stores/viewerStore'
-import ThemeToggle from '../ThemeToggle'
 import type { ProjectType } from '../../types'
+import { shouldStartWindowDrag } from '../../native/windowDrag'
 
 const dragStyle = { WebkitAppRegion: 'drag' } as React.CSSProperties
 const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
@@ -85,16 +85,42 @@ export default function TitleBar() {
     if (activeProject) window.api.openPath(activeProject.path)
   }
 
+  function handleTitleBarMouseDown(e: React.MouseEvent<HTMLElement>) {
+    if (!shouldStartWindowDrag(e.nativeEvent)) return
+    void window.api.startWindowDrag().catch((err) => {
+      console.error('Failed to start window drag:', err)
+    })
+  }
+
   return (
     <header
+      data-tauri-drag-region
       style={dragStyle}
+      onMouseDown={handleTitleBarMouseDown}
       className="h-10 flex-shrink-0 flex items-center bg-mantle border-b border-surface0"
     >
-      {/* macOS: 80px clearance for traffic lights */}
-      {platform === 'darwin' && <div className="w-[80px] flex-shrink-0" />}
+      {platform === 'darwin' && (
+        <div data-no-drag style={noDragStyle} className="w-[80px] flex-shrink-0 flex items-center gap-2 pl-3">
+          <button
+            onClick={() => window.api.closeWindow()}
+            aria-label="닫기"
+            className="w-3 h-3 rounded-full bg-red/90 hover:bg-red transition-colors"
+          />
+          <button
+            onClick={() => window.api.minimizeWindow()}
+            aria-label="최소화"
+            className="w-3 h-3 rounded-full bg-yellow/90 hover:bg-yellow transition-colors"
+          />
+          <button
+            onClick={() => window.api.toggleMaximize()}
+            aria-label="최대화"
+            className="w-3 h-3 rounded-full bg-green/90 hover:bg-green transition-colors"
+          />
+        </div>
+      )}
 
       {/* Project selector */}
-      <div style={noDragStyle} className="flex items-center gap-2">
+      <div data-no-drag style={noDragStyle} className="flex items-center gap-2">
         <button
           onClick={() => setOpen((o) => !o)}
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-md text-sm transition-colors
@@ -185,12 +211,13 @@ export default function TitleBar() {
 
       <div className="flex-1" />
 
-      <div style={noDragStyle} className="flex items-center gap-1 pr-3">
+      <div data-no-drag style={noDragStyle} className="flex items-center gap-1 pr-3">
         {/* Open active project in Finder/Explorer */}
         {activeProject && (
           <button
             onClick={handleOpenInFinder}
-            title="Finder에서 열기"
+            title="폴더로 이동"
+            aria-label="폴더로 이동"
             className="p-1.5 rounded text-overlay0 hover:text-text hover:bg-surface0/60 transition-colors"
           >
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
@@ -198,12 +225,10 @@ export default function TitleBar() {
             </svg>
           </button>
         )}
-        <ThemeToggle />
       </div>
 
-      {/* Linux: custom window controls (no native overlay support) */}
-      {platform === 'linux' && (
-        <div style={noDragStyle} className="flex items-stretch h-full ml-1">
+      {(platform === 'linux' || platform === 'win32') && (
+        <div data-no-drag style={noDragStyle} className="flex items-stretch h-full ml-1">
           <button
             onClick={() => window.api.minimizeWindow()}
             title="최소화"
@@ -227,9 +252,6 @@ export default function TitleBar() {
           </button>
         </div>
       )}
-
-      {/* Windows: spacer so content doesn't bleed under the native titlebar overlay (~138px) */}
-      {platform === 'win32' && <div className="w-[138px] flex-shrink-0" />}
     </header>
   )
 }

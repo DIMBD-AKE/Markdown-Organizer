@@ -13,6 +13,8 @@ import SettingsPanel from './components/Settings/SettingsPanel'
 import DocumentViewer from './components/Viewer/DocumentViewer'
 import TocPanel from './components/TocPanel/TocPanel'
 import ResizeHandle from './components/ResizeHandle'
+import { getStartupProjectSession } from './appInit'
+import { buildProjectStateSnapshot, createDebouncedProjectStateSaver } from './statePersistence'
 
 const MIN_SIDE = 140
 const MAX_SIDE = 480
@@ -68,41 +70,79 @@ export default function App() {
       useFileTreeStore.getState().completeStream()
     })
 
+    let persistenceReady = false
+    const getProjectStateSnapshot = () => {
+      const { activeProjectId } = useProjectStore.getState()
+      const { selectedFile, expandedDirs } = useFileTreeStore.getState()
+      const { filePath, scrollPos, scrollPositions } = useViewerStore.getState()
+      return buildProjectStateSnapshot({
+        activeProjectId,
+        viewerFilePath: filePath,
+        selectedPath: selectedFile,
+        expandedDirs,
+        scrollPos,
+        scrollPositions,
+      })
+    }
+    const projectStateSaver = createDebouncedProjectStateSaver({
+      delayMs: 250,
+      getSnapshot: getProjectStateSnapshot,
+      save: (state) => window.api.saveProjectState(state),
+      onError: (err) => console.error('Failed to save project state:', err),
+    })
+    const scheduleProjectStateSave = () => {
+      if (persistenceReady) projectStateSaver.schedule()
+    }
+    const unsubProjectPersistence = useProjectStore.subscribe(scheduleProjectStateSave)
+    const unsubTreePersistence = useFileTreeStore.subscribe(scheduleProjectStateSave)
+    const unsubViewerPersistence = useViewerStore.subscribe(scheduleProjectStateSave)
+    const flushProjectStateSave = () => {
+      if (persistenceReady) projectStateSaver.flush()
+    }
+    const flushProjectStateOnVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') flushProjectStateSave()
+    }
+    window.addEventListener('beforeunload', flushProjectStateSave)
+    window.addEventListener('pagehide', flushProjectStateSave)
+    document.addEventListener('visibilitychange', flushProjectStateOnVisibilityChange)
+
     window.api.getAppState().then(async (state) => {
       setProjects(state.projects)
       setTheme(state.theme as Theme)
 
-      if (state.activeProjectId) {
-        setActiveProject(state.activeProjectId)
-        const ps = state.projectStates[state.activeProjectId]
-        if (ps) {
-          useFileTreeStore.getState().setExpandedDirs(ps.expandedDirs)
-          const proj = state.projects.find((p) => p.id === state.activeProjectId)
-          if (proj) {
-            try {
-              const { rootNode } = await window.api.getFileTreeStream(proj.path)
-              if (rootNode) {
-                useFileTreeStore.getState().startStream(rootNode)
-              }
-              if (ps.lastFile) {
-                // Independent of stream — file content load doesn't need tree.
-                // Mark loading first so the viewer shows a spinner immediately,
-                // not a blank pane, while the read is in flight.
-                useViewerStore.getState().beginFileLoad(ps.lastFile)
-                useFileTreeStore.getState().setSelectedFile(ps.lastFile)
-                const { content, error } = await window.api.readFile(ps.lastFile)
-                if (content) {
-                  useViewerStore.getState().setFile(ps.lastFile, content)
-                } else {
-                  useViewerStore.getState().setError(error ?? '파일을 읽을 수 없습니다')
-                }
-              }
-            } catch (err) {
-              console.error('Failed to load project:', err)
+      const startupSession = getStartupProjectSession(state)
+      if (startupSession) {
+        const { project, expandedDirs, lastFile, scrollPos, scrollPositions } = startupSession
+        setActiveProject(project.id)
+        useFileTreeStore.getState().setExpandedDirs(expandedDirs)
+        useViewerStore.getState().setScrollPositions(scrollPositions)
+        useViewerStore.getState().setScrollPos(scrollPos)
+
+        try {
+          const { rootNode } = await window.api.getFileTreeStream(project.path)
+          if (rootNode) {
+            useFileTreeStore.getState().startStream(rootNode)
+          }
+          if (lastFile) {
+            // Independent of stream — file content load doesn't need tree.
+            // Mark loading first so the viewer shows a spinner immediately,
+            // not a blank pane, while the read is in flight.
+            useViewerStore.getState().beginFileLoad(lastFile, { preserveScroll: true })
+            useFileTreeStore.getState().setSelectedFile(lastFile)
+            const { content, error } = await window.api.readFile(lastFile)
+            if (content) {
+              useViewerStore.getState().setFile(lastFile, content)
+            } else {
+              useViewerStore.getState().setError(error ?? '파일을 읽을 수 없습니다')
             }
           }
+        } catch (err) {
+          console.error('Failed to load project:', err)
         }
       }
+    }).finally(() => {
+      persistenceReady = true
+      projectStateSaver.schedule()
     })
 
     // Restore panel widths
@@ -126,22 +166,15 @@ export default function App() {
       if (grouping != null) ui.setVirtualGrouping(grouping === 'true')
     })
 
-    const saveState = () => {
-      const { activeProjectId } = useProjectStore.getState()
-      if (!activeProjectId) return
-      const { selectedFile, expandedDirs } = useFileTreeStore.getState()
-      const { scrollPos } = useViewerStore.getState()
-      window.api.saveProjectState({
-        projectId: activeProjectId,
-        lastFile: selectedFile,
-        scrollPos,
-        expandedDirs: Array.from(expandedDirs),
-        searchHistory: []
-      })
-    }
-    window.addEventListener('beforeunload', saveState)
     return () => {
-      window.removeEventListener('beforeunload', saveState)
+      flushProjectStateSave()
+      window.removeEventListener('beforeunload', flushProjectStateSave)
+      window.removeEventListener('pagehide', flushProjectStateSave)
+      document.removeEventListener('visibilitychange', flushProjectStateOnVisibilityChange)
+      unsubProjectPersistence()
+      unsubTreePersistence()
+      unsubViewerPersistence()
+      projectStateSaver.cancel()
       if (flushRaf) cancelAnimationFrame(flushRaf)
       unsubNode()
       unsubComplete()

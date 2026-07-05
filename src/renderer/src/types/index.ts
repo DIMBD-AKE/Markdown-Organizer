@@ -55,6 +55,7 @@ export interface ProjectState {
   projectId: string
   lastFile: string | null
   scrollPos: number
+  scrollPositions: Record<string, number>
   expandedDirs: string[]
   searchHistory: string[]
 }

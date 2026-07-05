@@ -6,6 +6,9 @@ import '@fontsource/geist/600.css'
 import '@fontsource-variable/literata'        // variable: wght 100–900, opsz 7–72
 import './index.css'
 import App from './App'
+import { installNativeApi } from './native/api'
+
+installNativeApi()
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
   <React.StrictMode>

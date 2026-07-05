@@ -2,6 +2,19 @@
 
 All notable changes to Markdown Organizer are documented here.
 
+## [1.3.0] — 2026-07-05
+
+### Changed
+- **Electron → Tauri 2 마이그레이션** — Electron main/preload 런타임을 제거하고 Rust 기반 Tauri 백엔드로 전환. React/TypeScript 렌더러는 유지하되, 기존 `window.api` 호출은 Tauri command/event 어댑터로 연결해 사용 흐름을 보존.
+- **배포 방식 전환** — GitHub Actions 기반 원격 빌드 워크플로를 제거하고, 릴리즈 플랫폼에서 로컬 빌드 후 GitHub Release에 직접 업로드하는 방식으로 변경. 릴리즈 업로드 스크립트가 macOS `.app.zip`, `.dmg`, `SHA256SUMS`를 정리된 파일명으로 생성.
+- **저장소 구조 정리** — Electron 전용 `src/main`, `src/preload`, electron-builder/electron-vite 설정과 관련 테스트·스크립트를 제거하고, `src-tauri` Rust 모듈로 프로젝트/파일트리/검색/감시/SQLite/윈도우 제어를 이전.
+
+### Fixed
+- **창 드래그** — Tauri frameless 윈도우에서 상단바 빈 영역을 드래그해 창 이동이 가능하도록 `startDragging()` 경로와 capability 권한을 연결.
+- **시작 시 상태 복원** — 앱 첫 실행·재시작 시 활성 프로젝트, 마지막 문서, 펼친 폴더, 스크롤 위치가 즉시 복원되도록 초기화 순서를 정리.
+- **파일별 스크롤 보존** — 파일을 오가거나 앱을 껐다 켜도 각 Markdown 파일의 스크롤 위치가 개별적으로 유지되도록 `scrollPositions` 맵을 SQLite에 저장.
+- **상단바 정리** — 우측 상단의 빠른 테마 변경 버튼을 제거하고, 프로젝트 폴더 이동 버튼을 `폴더로 이동` 액션으로 유지.
+
 ## [1.2.6] — 2026-06-21
 
 ### Fixed

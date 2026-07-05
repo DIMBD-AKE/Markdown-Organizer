@@ -1,7 +1,7 @@
 # Design System — Markdown Organizer
 
 ## Product Context
-- **What this is:** macOS Electron desktop app for browsing, reading, and managing AI-generated Markdown documents across multiple projects.
+- **What this is:** macOS/Windows/Linux Tauri desktop app for browsing, reading, and managing AI-generated Markdown documents across multiple projects.
 - **Who it's for:** Developers who use LLMs (ChatGPT, Claude, Gemini) daily and need to organize the output.
 - **Space/industry:** Developer productivity tools / AI document management.
 - **Project type:** Desktop app — 4-column layout optimized for long-form reading and fast navigation.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { shouldRestoreScroll } from '../../src/renderer/src/components/Viewer/DocumentViewer'
+import { shouldRestoreRenderedScroll, shouldRestoreScroll } from '../../src/renderer/src/components/Viewer/DocumentViewer'
 
 // Regression: search → open a doc that has a saved scroll position must NOT
 // restore that scroll, because MarkdownRenderer scrolls to the match instead.
@@ -18,5 +18,15 @@ describe('shouldRestoreScroll', () => {
 
   it('restores when search target matches but the query is whitespace-only', () => {
     expect(shouldRestoreScroll('/docs/a.md', '/docs/a.md', '   ')).toBe(true)
+  })
+})
+
+describe('shouldRestoreRenderedScroll', () => {
+  it('waits for content before restoring saved scroll', () => {
+    expect(shouldRestoreRenderedScroll('/docs/a.md', null, null, '')).toBe(false)
+  })
+
+  it('restores after the document content is available', () => {
+    expect(shouldRestoreRenderedScroll('/docs/a.md', '# Ready', null, '')).toBe(true)
   })
 })

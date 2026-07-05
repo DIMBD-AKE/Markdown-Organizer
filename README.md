@@ -6,7 +6,7 @@ LLM(ChatGPT, Claude, Gemini)을 매일 쓰는 개발자를 위한 멀티 프로�
 
 [![Release](https://img.shields.io/github/v/release/DIMBD-AKE/Markdown-Organizer?label=release)](https://github.com/DIMBD-AKE/Markdown-Organizer/releases/latest)
 ![Platform](https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey)
-![Electron](https://img.shields.io/badge/Electron-31-47848F?logo=electron&logoColor=white)
+![Tauri](https://img.shields.io/badge/Tauri-2-24C8DB?logo=tauri&logoColor=white)
 ![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
 
 <img src="sample.png" alt="screenshot" width="900">
@@ -60,19 +60,9 @@ LLM(ChatGPT, Claude, Gemini)을 매일 쓰는 개발자를 위한 멀티 프로�
 
 AI 생성 문서의 갱신 필요 여부를 즉시 파악.
 
-### 테마 시스템
+### 테마
 
-[Catppuccin](https://github.com/catppuccin/catppuccin) 팔레트 기반 3종 테마. 설정 패널에서 즉시 전환.
-
-| 테마 | 용도 |
-|------|------|
-| Mocha (Dark) | 기본 다크 |
-| Black | OLED / 집중 모드 |
-| Latte | 라이트 |
-
-### 자동 업데이트
-
-GitHub Releases 기반. 앱 시작 5초 후 자동 확인 — 설정 패널에서 수동 확인 및 설치 가능.
+[Catppuccin](https://github.com/catppuccin/catppuccin) 팔레트 기반 테마를 설정 패널에서 선택 가능. 상단바는 읽기 흐름과 폴더 이동에 집중하도록 간소화.
 
 ---
 
@@ -80,18 +70,18 @@ GitHub Releases 기반. 앱 시작 5초 후 자동 확인 — 설정 패널에�
 
 | 역할 | 기술 |
 |------|------|
-| 프레임워크 | Electron 31 + electron-vite |
+| 프레임워크 | Tauri 2 + Vite |
 | UI | React 18 + TypeScript |
 | 스타일 | Tailwind CSS v4 + Catppuccin 변수 |
 | 상태 관리 | Zustand |
 | Markdown | react-markdown + remark-gfm + rehype-raw |
 | 다이어그램 | Mermaid.js |
 | 구문 강조 | Shiki |
-| 데이터베이스 | better-sqlite3 (SQLite) |
-| 파일 감시 | chokidar |
+| 데이터베이스 | Rust rusqlite (SQLite) |
+| 파일 감시 | Rust notify |
 | 폰트 | Geist (UI) · Literata (문서 본문) · JetBrains Mono (코드) |
-| 업데이트 | electron-updater |
-| 패키징 | electron-builder |
+| 배포 | 로컬 빌드 + GitHub Release 업로드 |
+| 패키징 | Tauri bundler |
 
 ---
 
@@ -117,28 +107,35 @@ npm run dev
 ### 프로덕션 빌드
 
 ```bash
-# macOS (.app inside .zip, x64 + arm64)
+# macOS (.app.zip + .dmg, 현재 머신 아키텍처)
 npm run build:mac
 
-# Windows (NSIS 설치파일 + Portable exe, x64)
+# Windows (NSIS 설치파일, 현재 머신 아키텍처)
 npm run build:win
 
 # Linux (AppImage, x64)
 npm run build:linux
 ```
 
-빌드 결과물은 `dist/` 에 생성됨.
+프론트엔드 빌드는 `dist/` 에 생성되고, 앱 번들은 `src-tauri/target/release/bundle/` 아래에 생성됨.
 
 ---
 
-## 릴리즈 (CI/CD)
+## 릴리즈 (로컬 빌드 후 업로드)
 
-`v*` 태그 push 시 GitHub Actions가 macOS / Windows / Linux 3개 플랫폼 병렬 빌드 후 GitHub Release에 자동 업로드.
+GitHub Actions 빌드는 사용하지 않음. 릴리즈할 플랫폼에서 로컬 빌드를 만든 뒤 GitHub CLI로 Release에 업로드.
 
 ```bash
-git tag v1.0.0
-git push origin v1.0.0
+# 1. 현재 플랫폼용 로컬 빌드
+npm run build:mac      # macOS
+npm run build:win      # Windows
+npm run build:linux    # Linux
+
+# 2. GitHub Release에 산출물 업로드
+npm run release:local -- --tag=v1.3.0 --notes-file=release-notes/v1.3.0.md
 ```
+
+업로드 전 `dist/release/vX.Y.Z/`에 릴리즈용 파일명이 정리되고 `SHA256SUMS_X.Y.Z.txt`가 생성됨.
 
 ---
 
@@ -146,9 +143,8 @@ git push origin v1.0.0
 
 | 플랫폼 | 형식 | 아키텍처 | 비고 |
 |--------|------|----------|------|
-| macOS | `.zip` (안에 `.app`) | x64, arm64 | 압축 풀고 `/Applications` 로 드래그 |
-| Windows | NSIS Setup (`Setup.exe`) | x64 | **권장.** 빠른 시작, 자동 업데이트 통합 |
-| Windows | Portable (`Portable.exe`) | x64 | 단일 exe, 설치 없음. USB / 임시 사용용 (시작 시 `%TEMP%` 압축 해제로 느림) |
+| macOS | `.app` / `.dmg` | 현재 빌드 머신 아키텍처 | `/Applications` 로 드래그 |
+| Windows | NSIS Setup (`.exe`) | 현재 빌드 머신 아키텍처 | 일반 설치 형식 |
 | Linux | AppImage | x64 | 실행 권한 부여 후 더블클릭 |
 
 ### macOS 첫 실행 시
@@ -174,10 +170,4 @@ xattr -cr /Applications/Markdown\ Organizer.app
 
 quarantine 확장 속성 제거 → Gatekeeper 체크 우회. 신뢰할 수 있는 출처(GitHub Releases)에서 받은 빌드에만 사용하세요.
 
-### Windows: NSIS Setup vs Portable
-
-- **NSIS Setup (`Setup.exe`)** — **권장.** 일반 설치 형식. 시작 시 즉시 실행, 자동 업데이트 통합, 시작 메뉴 등록. 일상 사용 시 선택.
-- **Portable (`Portable.exe`)** — 설치 없이 단일 exe. 매 실행마다 `%TEMP%` 에 임시 압축 해제 → 시작이 느림. 권한이 없는 환경 / USB 휴대 / 잠깐 써보는 용도에 적합.
-
-> 같은 컴퓨터에 둘 다 설치 시 데이터 디렉터리는 공유됩니다 (`%APPDATA%/markdown-organizer`).
-
+> 앱 데이터는 Tauri 앱 데이터 디렉터리에 저장됩니다.

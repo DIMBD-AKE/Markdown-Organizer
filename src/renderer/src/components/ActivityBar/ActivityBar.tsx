@@ -3,9 +3,8 @@ import { useProjectStore } from '../../stores/projectStore'
 import { useFileTreeStore } from '../../stores/fileTreeStore'
 import { useViewerStore } from '../../stores/viewerStore'
 import ProjectIcon from './ProjectIcon'
-import ThemeToggle from '../ThemeToggle'
 
-// Electron-specific CSS property not in React typings
+// Desktop webview drag-region CSS property is not in React typings.
 const dragStyle = { WebkitAppRegion: 'drag', pointerEvents: 'none' } as React.CSSProperties
 const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties
 
@@ -60,8 +59,6 @@ export default function ActivityBar() {
         ))}
 
         <div className="flex-1" />
-
-        <ThemeToggle />
 
         <button
           title="프로젝트 추가"

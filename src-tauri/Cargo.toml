@@ -1,0 +1,28 @@
+[package]
+name = "markdown-organizer"
+version = "1.3.0"
+description = "Desktop app for managing AI-generated Markdown documents"
+authors = ["DIMBD-AKE <dream70521@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/DIMBD-AKE/Markdown-Organizer"
+edition = "2021"
+
+[lib]
+name = "markdown_organizer_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.5.1", features = [] }
+
+[dependencies]
+open = "5.3"
+notify = "8.2"
+regex = "1.11"
+rfd = "0.15"
+rusqlite = { version = "0.32", features = ["bundled"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tauri = { version = "2.11.5", features = [] }
+url = "2.5"
+uuid = { version = "1.11", features = ["v4"] }
+walkdir = "2.5"

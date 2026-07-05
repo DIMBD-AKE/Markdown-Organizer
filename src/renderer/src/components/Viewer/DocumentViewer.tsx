@@ -3,7 +3,7 @@ import { useSearchStore } from '../../stores/searchStore'
 import DocHeader from './DocHeader'
 import MarkdownRenderer from './MarkdownRenderer'
 import ErrorBoundary from '../ErrorBoundary'
-import React, { useEffect } from 'react'
+import React, { useLayoutEffect } from 'react'
 
 interface Props { scrollRef: React.RefObject<HTMLDivElement | null> }
 
@@ -19,6 +19,16 @@ export function shouldRestoreScroll(
   return true
 }
 
+export function shouldRestoreRenderedScroll(
+  filePath: string | null,
+  content: string | null,
+  searchActiveFilePath: string | null,
+  searchQuery: string
+): boolean {
+  if (!filePath || content === null) return false
+  return shouldRestoreScroll(filePath, searchActiveFilePath, searchQuery)
+}
+
 export default function DocumentViewer({ scrollRef }: Props) {
   // Use individual selectors — calling useViewerStore() with no selector subscribes
   // to ALL state changes (including scrollPos every scroll event), causing a
@@ -28,13 +38,29 @@ export default function DocumentViewer({ scrollRef }: Props) {
   const error = useViewerStore((s) => s.error)
   const isFileLoading = useViewerStore((s) => s.isFileLoading)
   const setScrollPos = useViewerStore((s) => s.setScrollPos)
+  const pendingScrollRestore = useViewerStore((s) => s.pendingScrollRestore)
+  const completeScrollRestore = useViewerStore((s) => s.completeScrollRestore)
 
-  useEffect(() => {
-    if (!scrollRef.current) return
+  useLayoutEffect(() => {
     const search = useSearchStore.getState()
-    if (!shouldRestoreScroll(filePath, search.activeFilePath, search.query)) return
-    scrollRef.current.scrollTop = useViewerStore.getState().scrollPos
-  }, [filePath])
+    if (!shouldRestoreRenderedScroll(filePath, content, search.activeFilePath, search.query)) {
+      if (filePath && content !== null) completeScrollRestore(filePath)
+      return
+    }
+    const targetScrollPos = pendingScrollRestore?.path === filePath
+      ? pendingScrollRestore.scrollPos
+      : useViewerStore.getState().scrollPos
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = targetScrollPos
+    }
+    const raf = requestAnimationFrame(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = targetScrollPos
+      }
+      if (filePath) completeScrollRestore(filePath)
+    })
+    return () => cancelAnimationFrame(raf)
+  }, [filePath, content, pendingScrollRestore, completeScrollRestore])
 
   function handleScroll(e: React.UIEvent<HTMLDivElement>) {
     setScrollPos((e.target as HTMLDivElement).scrollTop)
